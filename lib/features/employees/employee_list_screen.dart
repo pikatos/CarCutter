@@ -64,23 +64,34 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
   }
 
   void _navigateToDetails(Employee employee) async {
-    final result = await Navigator.push(
+    final result = await Navigator.push<Employee>(
       context,
       MaterialPageRoute(
         builder: (context) => EmployeeDetailsScreen(employee: employee),
       ),
     );
-    if (result == true) {
+    if (result != null) {
+      setState(() {
+        final index = _employees.indexWhere((e) => e.id == result.id);
+        if (index != -1) {
+          _employees[index] = result;
+        }
+      });
+    } else {
       _fetchEmployees();
     }
   }
 
   void _navigateToCreate() async {
-    final result = await Navigator.push(
+    final result = await Navigator.push<Employee>(
       context,
       MaterialPageRoute(builder: (context) => const EmployeeFormScreen()),
     );
-    if (result == true) {
+    if (result != null) {
+      setState(() {
+        _employees.add(result);
+      });
+    } else {
       _fetchEmployees();
     }
   }

@@ -13,6 +13,7 @@ class EmployeeDetailsScreen extends StatefulWidget {
 
 class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
   late Employee _employee;
+  Employee? _updatedEmployee;
 
   @override
   void initState() {
@@ -27,60 +28,71 @@ class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
         builder: (context) => EmployeeFormScreen(employee: _employee),
       ),
     );
-    if (result == true && mounted) {
-      setState(() {});
+    if (result is Employee && mounted) {
+      setState(() {
+        _employee = result;
+        _updatedEmployee = result;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Employee Details')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToEdit,
-        child: const Icon(Icons.edit),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.deepPurple,
-                child: Text(
-                  _employee.name[0],
-                  style: const TextStyle(fontSize: 40, color: Colors.white),
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (_updatedEmployee != null && result == null) {
+          Navigator.of(context).pop(_updatedEmployee);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Employee Details')),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _navigateToEdit,
+          child: const Icon(Icons.edit),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.deepPurple,
+                  child: Text(
+                    _employee.name[0],
+                    style: const TextStyle(fontSize: 40, color: Colors.white),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            _buildDetailTile(
-              icon: Icons.badge,
-              label: 'Name',
-              value: _employee.name,
-            ),
-            _buildDetailTile(
-              icon: Icons.attach_money,
-              label: 'Salary',
-              value: '\$${_employee.salary}',
-            ),
-            _buildDetailTile(
-              icon: Icons.cake,
-              label: 'Age',
-              value: '${_employee.age} years',
-            ),
-            if (_employee.profileImage.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Text(
-                'Profile Image',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+              const SizedBox(height: 24),
+              _buildDetailTile(
+                icon: Icons.badge,
+                label: 'Name',
+                value: _employee.name,
               ),
-              const SizedBox(height: 8),
-              Image.network(_employee.profileImage),
+              _buildDetailTile(
+                icon: Icons.attach_money,
+                label: 'Salary',
+                value: '\$${_employee.salary}',
+              ),
+              _buildDetailTile(
+                icon: Icons.cake,
+                label: 'Age',
+                value: '${_employee.age} years',
+              ),
+              if (_employee.profileImage.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Text(
+                  'Profile Image',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
+                Image.network(_employee.profileImage),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
