@@ -13,7 +13,7 @@ class EmployeeDetailsScreen extends StatefulWidget {
 
 class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
   late Employee _employee;
-  Employee? _updatedEmployee;
+  bool _hasUpdated = false;
 
   @override
   void initState() {
@@ -31,7 +31,7 @@ class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
     if (result is Employee && mounted) {
       setState(() {
         _employee = result;
-        _updatedEmployee = result;
+        _hasUpdated = true;
       });
     }
   }
@@ -41,8 +41,8 @@ class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        if (_updatedEmployee != null && result == null) {
-          Navigator.of(context).pop(_updatedEmployee);
+        if (_hasUpdated && result == null) {
+          Navigator.of(context).pop(_employee);
         }
       },
       child: Scaffold(
