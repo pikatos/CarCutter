@@ -24,9 +24,9 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
   void initState() {
     super.initState();
     if (widget.employee != null) {
-      _nameController.text = widget.employee!.employeeName;
-      _salaryController.text = widget.employee!.employeeSalary;
-      _ageController.text = widget.employee!.employeeAge;
+      _nameController.text = widget.employee!.name;
+      _salaryController.text = widget.employee!.salary;
+      _ageController.text = widget.employee!.age;
     }
   }
 
@@ -46,12 +46,14 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
 
       try {
         if (widget.employee != null) {
-          await _repository.updateEmployee(
+          final updatedEmployee = Employee(
             id: widget.employee!.id,
             name: _nameController.text,
             salary: _salaryController.text,
             age: _ageController.text,
+            profileImage: widget.employee!.profileImage,
           );
+          await _repository.updateEmployee(updatedEmployee);
         } else {
           await _repository.createEmployee(
             name: _nameController.text,

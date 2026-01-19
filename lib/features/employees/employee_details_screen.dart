@@ -1,15 +1,45 @@
 import 'package:flutter/material.dart';
 import 'employee_model.dart';
+import 'employee_form_screen.dart';
 
-class EmployeeDetailsScreen extends StatelessWidget {
+class EmployeeDetailsScreen extends StatefulWidget {
   final Employee employee;
 
   const EmployeeDetailsScreen({super.key, required this.employee});
 
   @override
+  State<EmployeeDetailsScreen> createState() => _EmployeeDetailsScreenState();
+}
+
+class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
+  late Employee _employee;
+
+  @override
+  void initState() {
+    super.initState();
+    _employee = widget.employee;
+  }
+
+  void _navigateToEdit() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EmployeeFormScreen(employee: _employee),
+      ),
+    );
+    if (result == true && mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Employee Details')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToEdit,
+        child: const Icon(Icons.edit),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -20,7 +50,7 @@ class EmployeeDetailsScreen extends StatelessWidget {
                 radius: 50,
                 backgroundColor: Colors.deepPurple,
                 child: Text(
-                  employee.employeeName[0],
+                  _employee.name[0],
                   style: const TextStyle(fontSize: 40, color: Colors.white),
                 ),
               ),
@@ -29,26 +59,26 @@ class EmployeeDetailsScreen extends StatelessWidget {
             _buildDetailTile(
               icon: Icons.badge,
               label: 'Name',
-              value: employee.employeeName,
+              value: _employee.name,
             ),
             _buildDetailTile(
               icon: Icons.attach_money,
               label: 'Salary',
-              value: '\$${employee.employeeSalary}',
+              value: '\$${_employee.salary}',
             ),
             _buildDetailTile(
               icon: Icons.cake,
               label: 'Age',
-              value: '${employee.employeeAge} years',
+              value: '${_employee.age} years',
             ),
-            if (employee.profileImage.isNotEmpty) ...[
+            if (_employee.profileImage.isNotEmpty) ...[
               const SizedBox(height: 16),
               const Text(
                 'Profile Image',
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(height: 8),
-              Image.network(employee.profileImage),
+              Image.network(_employee.profileImage),
             ],
           ],
         ),
