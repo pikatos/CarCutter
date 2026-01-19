@@ -39,10 +39,11 @@ class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      onPopInvokedWithResult: (didPop, result) async {
+      canPop: !_hasUpdated,
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         if (_hasUpdated && result == null) {
-          Navigator.of(context).pop(_employee);
+          Navigator.pop(context, _employee);
         }
       },
       child: Scaffold(
