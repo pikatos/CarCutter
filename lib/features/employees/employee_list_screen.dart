@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'employee_repository.dart';
 import 'employee_model.dart';
 import 'employee_details_screen.dart';
+import 'employee_form_screen.dart';
 
 class EmployeeListScreen extends StatefulWidget {
   const EmployeeListScreen({super.key});
@@ -62,13 +63,26 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
     }
   }
 
-  void _navigateToDetails(Employee employee) {
-    Navigator.push(
+  void _navigateToDetails(Employee employee) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EmployeeDetailsScreen(employee: employee),
       ),
     );
+    if (result == true) {
+      _fetchEmployees();
+    }
+  }
+
+  void _navigateToCreate() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const EmployeeFormScreen()),
+    );
+    if (result == true) {
+      _fetchEmployees();
+    }
   }
 
   @override
@@ -82,6 +96,10 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
             onPressed: _fetchEmployees,
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToCreate,
+        child: const Icon(Icons.add),
       ),
       body: _buildBody(),
     );
