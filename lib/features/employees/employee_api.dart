@@ -60,11 +60,13 @@ class EmployeeApi {
       headers: {'Content-Type': 'application/json'},
       body: body,
     );
+
+    dynamic json = jsonDecode(response.body);
+    json['data']['id'] =
+        employee.id; // API doesn't return ID, inject from request
+
     if (response.statusCode == 200) {
-      return EmployeeResponse.fromJson(
-        jsonDecode(response.body),
-        Employee.fromJson,
-      );
+      return EmployeeResponse.fromJson(json, Employee.fromJson);
     } else {
       throw Exception('Failed to update employee');
     }
