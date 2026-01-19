@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'employee_repository.dart';
 import 'employee_model.dart';
+import 'employee_details_screen.dart';
 
 class EmployeeListScreen extends StatefulWidget {
   const EmployeeListScreen({super.key});
@@ -61,6 +62,15 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
     }
   }
 
+  void _navigateToDetails(Employee employee) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EmployeeDetailsScreen(employee: employee),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,6 +124,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
             icon: const Icon(Icons.delete, color: Colors.red),
             onPressed: () => _showDeleteDialog(employee),
           ),
+          onTap: () => _navigateToDetails(employee),
         );
       },
     );
