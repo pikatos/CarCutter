@@ -77,8 +77,6 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
           _employees[index] = result;
         }
       });
-    } else {
-      _fetchEmployees();
     }
   }
 
