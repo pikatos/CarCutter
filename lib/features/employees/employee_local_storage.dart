@@ -9,12 +9,19 @@ class EmployeeLocalStorage {
   static const String _localIdCounterFile = 'local_id_counter.json';
 
   int _localIdCounter = -1;
+  bool _localIdCounterLoaded = false;
 
   List<Employee> _employees = [];
   bool _employeesLoaded = false;
 
   List<SyncOperation> _pendingOperations = [];
   bool _operationsLoaded = false;
+
+  Future<void> _ensureLocalIdCounterLoaded() async {
+    if (_localIdCounterLoaded) return;
+    _localIdCounter = await _loadLocalIdCounterFromFile();
+    _localIdCounterLoaded = true;
+  }
 
   Future<void> _ensureEmployeesLoaded() async {
     if (_employeesLoaded) return;
@@ -133,14 +140,14 @@ class EmployeeLocalStorage {
   }
 
   Future<int> getNextLocalId() async {
-    await _loadLocalIdCounter();
+    await _ensureLocalIdCounterLoaded();
     final id = _localIdCounter;
     _localIdCounter--;
     await _saveLocalIdCounter();
     return id;
   }
 
-  Future<void> _loadLocalIdCounter() async {
+  Future<int> _loadLocalIdCounterFromFile() async {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/$_localIdCounterFile');
 
@@ -148,11 +155,12 @@ class EmployeeLocalStorage {
       try {
         final jsonString = await file.readAsString();
         final json = jsonDecode(jsonString) as Map<String, dynamic>;
-        _localIdCounter = json['counter'] as int;
+        return json['counter'] as int;
       } catch (e) {
-        _localIdCounter = -1;
+        return -1;
       }
     }
+    return -1;
   }
 
   Future<void> _saveLocalIdCounter() async {
@@ -208,17 +216,10 @@ class EmployeeLocalStorage {
   Future<void> savePendingOperations(List<SyncOperation> operations) async {
     await _ensureOperationsLoaded();
     _pendingOperations = List<SyncOperation>.from(operations);
-    await _saveOperationsToFile();
-  }
-
-  Future<void> clearPendingOperations() async {
-    await _ensureOperationsLoaded();
-    _pendingOperations.clear();
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$_syncQueueFile');
-
-    if (await file.exists()) {
-      await file.delete();
+    if (_pendingOperations.isEmpty) {
+      _localIdCounter = -1;
+      await _saveLocalIdCounter();
     }
+    await _saveOperationsToFile();
   }
 }

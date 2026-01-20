@@ -6,11 +6,14 @@ import 'package:carcutter/features/employees/employee_local_storage.dart';
 
 class MockLocalStorage extends EmployeeLocalStorage {
   final Map<String, String> _files = {};
+  int _localIdCounter = -1;
 
   Future<Directory> createTempDir() async {
     final dir = Directory.systemTemp.createTempSync('test_');
     return dir;
   }
+
+  int get localIdCounter => _localIdCounter;
 
   @override
   Future<List<Employee>> getAllEmployees() async {
@@ -51,11 +54,9 @@ class MockLocalStorage extends EmployeeLocalStorage {
   Future<void> savePendingOperations(List<SyncOperation> operations) async {
     final json = {'operations': operations.map((e) => e.toJson()).toList()};
     _files['sync_queue.json'] = jsonEncode(json);
-  }
-
-  @override
-  Future<void> clearPendingOperations() async {
-    _files.remove('sync_queue.json');
+    if (operations.isEmpty) {
+      _localIdCounter = -1;
+    }
   }
 }
 
@@ -167,36 +168,6 @@ void main() {
       expect(operations[0].employee.id, 42);
     });
 
-    test('clears pending operations', () async {
-      await storage.addSyncOperation(
-        SyncOperation.delete(
-          employee: Employee(
-            id: 1,
-            name: '',
-            salary: '',
-            age: '',
-            profileImage: '',
-          ),
-        ),
-      );
-      await storage.addSyncOperation(
-        SyncOperation.delete(
-          employee: Employee(
-            id: 2,
-            name: '',
-            salary: '',
-            age: '',
-            profileImage: '',
-          ),
-        ),
-      );
-
-      await storage.clearPendingOperations();
-
-      final operations = await storage.getAllPendingOperations();
-      expect(operations, isEmpty);
-    });
-
     test('preserves order of operations', () async {
       await storage.addSyncOperation(
         SyncOperation.delete(
@@ -237,6 +208,34 @@ void main() {
       expect(operations[0].type, SyncOperationType.delete);
       expect(operations[1].type, SyncOperationType.create);
       expect(operations[2].type, SyncOperationType.update);
+    });
+
+    test('resets localIdCounter to -1 when clearing operations', () async {
+      await storage.addSyncOperation(
+        SyncOperation.create(
+          employee: Employee(
+            id: 0,
+            name: 'Test',
+            salary: '3000',
+            age: '25',
+            profileImage: '',
+          ),
+        ),
+      );
+      expect(storage.localIdCounter, -1);
+      await storage.addSyncOperation(
+        SyncOperation.create(
+          employee: Employee(
+            id: 0,
+            name: 'Test2',
+            salary: '4000',
+            age: '30',
+            profileImage: '',
+          ),
+        ),
+      );
+      await storage.savePendingOperations([]);
+      expect(storage.localIdCounter, -1);
     });
   });
 

@@ -178,11 +178,6 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
-  Future<void> clearPendingOperations() async {
-    _operations.clear();
-  }
-
-  @override
   Future<int> getNextLocalId() async {
     final id = _nextLocalId;
     _nextLocalId--;

@@ -181,11 +181,6 @@ class StubLocalStorage extends EmployeeLocalStorage {
   Future<void> savePendingOperations(List<SyncOperation> operations) async {
     _operations = List<SyncOperation>.from(operations);
   }
-
-  @override
-  Future<void> clearPendingOperations() async {
-    _operations.clear();
-  }
 }
 
 void main() {
