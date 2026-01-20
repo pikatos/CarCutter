@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'employee_repository.dart';
 import 'employee_model.dart';
 import 'employee_details_screen.dart';
 import 'employee_form_screen.dart';
 
 class EmployeeListScreen extends StatefulWidget {
-  final EmployeeRepository? repository;
-
-  const EmployeeListScreen({super.key, this.repository});
+  const EmployeeListScreen({super.key});
 
   @override
   State<EmployeeListScreen> createState() => _EmployeeListScreenState();
 }
 
 class _EmployeeListScreenState extends State<EmployeeListScreen> {
-  late final EmployeeRepository _repository;
   List<Employee> _employees = [];
   bool _isLoading = false;
   String? _error;
@@ -22,7 +20,6 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? EmployeeRepository();
     _fetchEmployees();
   }
 
@@ -33,7 +30,8 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
     });
 
     try {
-      final employees = await _repository.getAllEmployees();
+      final repository = context.read<EmployeeRepository>();
+      final employees = await repository.getAllEmployees();
       setState(() {
         _employees = employees;
         _isLoading = false;
@@ -48,7 +46,8 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
 
   Future<void> _deleteEmployee(int id) async {
     try {
-      await _repository.deleteEmployee(id);
+      final repository = context.read<EmployeeRepository>();
+      await repository.deleteEmployee(id);
       setState(() {
         _employees.removeWhere((e) => e.id == id);
       });
@@ -70,8 +69,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
     final result = await Navigator.push<Employee>(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            EmployeeDetailsScreen(employee: employee, repository: _repository),
+        builder: (context) => EmployeeDetailsScreen(employee: employee),
       ),
     );
     if (result != null) {

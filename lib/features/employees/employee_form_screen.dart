@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'employee_repository.dart';
 import 'employee_model.dart';
 
 class EmployeeFormScreen extends StatefulWidget {
   final Employee? employee;
-  final EmployeeRepository? repository;
 
-  const EmployeeFormScreen({super.key, this.employee, this.repository});
+  const EmployeeFormScreen({super.key, this.employee});
 
   @override
   State<EmployeeFormScreen> createState() => _EmployeeFormScreenState();
@@ -17,13 +17,11 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
   final _nameController = TextEditingController();
   final _salaryController = TextEditingController();
   final _ageController = TextEditingController();
-  late final EmployeeRepository _repository;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? EmployeeRepository();
     if (widget.employee != null) {
       _nameController.text = widget.employee!.name;
       _salaryController.text = widget.employee!.salary;
@@ -46,6 +44,7 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
       });
 
       try {
+        final repository = context.read<EmployeeRepository>();
         if (widget.employee != null) {
           final updatedEmployee = Employee(
             id: widget.employee!.id,
@@ -54,12 +53,12 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
             age: _ageController.text,
             profileImage: widget.employee!.profileImage,
           );
-          final result = await _repository.updateEmployee(updatedEmployee);
+          final result = await repository.updateEmployee(updatedEmployee);
           if (mounted) {
             Navigator.pop(context, result);
           }
         } else {
-          final result = await _repository.createEmployee(
+          final result = await repository.createEmployee(
             name: _nameController.text,
             salary: _salaryController.text,
             age: _ageController.text,

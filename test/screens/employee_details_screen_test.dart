@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:carcutter/features/employees/employee_details_screen.dart';
 import 'package:carcutter/features/employees/employee_form_screen.dart';
 import 'package:carcutter/features/employees/employee_model.dart';
@@ -61,8 +62,9 @@ void main() {
 
   Widget createDetailsWidget(Employee employee) {
     final repository = EmployeeRepository(api: stubApi);
-    return MaterialApp(
-      home: EmployeeDetailsScreen(employee: employee, repository: repository),
+    return MultiProvider(
+      providers: [Provider<EmployeeRepository>.value(value: repository)],
+      child: MaterialApp(home: EmployeeDetailsScreen(employee: employee)),
     );
   }
 
