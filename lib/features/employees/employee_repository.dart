@@ -59,22 +59,11 @@ class EmployeeRepository with ChangeNotifier {
     } catch (e) {
       _offlineStatus.setOffline(true);
 
-      final localId = await _localStorage.getNextLocalId();
-      final employee = Employee(
-        id: localId,
+      return await _localStorage.addEmployeeOffline(
         name: name,
         salary: salary,
         age: age,
-        profileImage: '',
       );
-
-      await _localStorage.addSyncOperation(
-        SyncOperation.create(employee: employee),
-      );
-
-      await _localStorage.addEmployee(employee);
-
-      return employee;
     }
   }
 

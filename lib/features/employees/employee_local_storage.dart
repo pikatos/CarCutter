@@ -45,6 +45,27 @@ class EmployeeLocalStorage {
     await saveEmployees(employees);
   }
 
+  Future<Employee> addEmployeeOffline({
+    required String name,
+    required String salary,
+    required String age,
+  }) async {
+    final localId = await getNextLocalId();
+    final employee = Employee(
+      id: localId,
+      name: name,
+      salary: salary,
+      age: age,
+      profileImage: '',
+    );
+
+    await addSyncOperation(SyncOperation.create(employee: employee));
+
+    await addEmployee(employee);
+
+    return employee;
+  }
+
   Future<void> updateEmployee(Employee employee) async {
     final employees = await loadEmployees();
     final index = employees.indexWhere((e) => e.id == employee.id);
