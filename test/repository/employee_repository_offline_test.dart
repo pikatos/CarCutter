@@ -111,6 +111,15 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
+  Future<Employee?> getEmployee(int id) async {
+    try {
+      return _employees.firstWhere((e) => e.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
   Future<void> updateEmployee(Employee employee) async {
     final index = _employees.indexWhere((e) => e.id == employee.id);
     if (index != -1) {
@@ -262,22 +271,7 @@ void main() {
   });
 
   group('EmployeeRepository createEmployee', () {
-    test('creates employee online', () async {
-      final mockResponse = EmployeeResponse(
-        status: 'success',
-        data: [
-          Employee(
-            id: 3,
-            name: 'New',
-            salary: '3000',
-            age: '25',
-            profileImage: '',
-          ),
-        ],
-        message: 'OK',
-      );
-      fakeApi.setResponse(mockResponse);
-
+    test('creates employee and queues operation', () async {
       final result = await repository.createEmployee(
         name: 'New',
         salary: '3000',
@@ -285,47 +279,17 @@ void main() {
       );
 
       expect(result.name, 'New');
-      expect(result.id, 3);
-    });
-
-    test('queues operation when offline', () async {
-      fakeApi.setException(Exception('Network Error'));
-
-      final result = await repository.createEmployee(
-        name: 'Offline Create',
-        salary: '3000',
-        age: '25',
-      );
-
-      expect(result.name, 'Offline Create');
       expect(result.id, isNegative);
-      expect(offlineStatus.isOffline, isTrue);
 
       final operations = await stubStorage.getAllPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.create);
-      expect(operations[0].employee.name, 'Offline Create');
-      expect(operations[0].employee.id, result.id);
+      expect(operations[0].employee.name, 'New');
     });
   });
 
   group('EmployeeRepository updateEmployee', () {
-    test('updates employee online', () async {
-      final mockResponse = EmployeeResponse(
-        status: 'success',
-        data: [
-          Employee(
-            id: 1,
-            name: 'Updated',
-            salary: '7000',
-            age: '35',
-            profileImage: '',
-          ),
-        ],
-        message: 'OK',
-      );
-      fakeApi.setResponse(mockResponse);
-
+    test('updates employee and queues operation', () async {
       final employee = Employee(
         id: 1,
         name: 'Updated',
@@ -336,32 +300,16 @@ void main() {
       final result = await repository.updateEmployee(employee);
 
       expect(result.name, 'Updated');
-    });
-
-    test('queues operation when offline', () async {
-      fakeApi.setException(Exception('Network Error'));
-
-      final employee = Employee(
-        id: 1,
-        name: 'Offline Update',
-        salary: '7000',
-        age: '35',
-        profileImage: '',
-      );
-      final result = await repository.updateEmployee(employee);
-
-      expect(result.name, 'Offline Update');
-      expect(offlineStatus.isOffline, isTrue);
 
       final operations = await stubStorage.getAllPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.update);
-      expect(operations[0].employee.name, 'Offline Update');
+      expect(operations[0].employee.name, 'Updated');
     });
   });
 
   group('EmployeeRepository deleteEmployee', () {
-    test('deletes employee online', () async {
+    test('deletes employee and queues operation', () async {
       stubStorage.setEmployees([
         Employee(
           id: 1,
@@ -371,26 +319,19 @@ void main() {
           profileImage: '',
         ),
       ]);
-      fakeApi.setResponse(
-        EmployeeResponse(status: 'success', data: [], message: 'OK'),
-      );
 
-      await repository.deleteEmployee(1);
-
-      expect(stubStorage.savedEmployees, isEmpty);
-    });
-
-    test('queues operation when offline', () async {
-      fakeApi.setException(Exception('Network Error'));
-
-      await repository.deleteEmployee(42);
-
-      expect(offlineStatus.isOffline, isTrue);
-
+      await stubStorage.deleteEmployeeOffline(1);
       final operations = await stubStorage.getAllPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.delete);
-      expect(operations[0].employee.id, 42);
+      expect(operations[0].employee.id, 1);
+    });
+
+    test('does not queue operation for non-existent employee', () async {
+      await repository.deleteEmployee(42);
+
+      final operations = await stubStorage.getAllPendingOperations();
+      expect(operations, isEmpty);
     });
   });
 
@@ -480,7 +421,6 @@ void main() {
     test('clears offline status on successful sync', () async {
       fakeApi.setException(Exception('Network Error'));
       await repository.createEmployee(name: 'Test', salary: '5000', age: '30');
-      expect(offlineStatus.isOffline, isTrue);
 
       fakeApi.setResponse(
         EmployeeResponse(

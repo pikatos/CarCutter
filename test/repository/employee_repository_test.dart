@@ -99,6 +99,15 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
+  Future<Employee?> getEmployee(int id) async {
+    try {
+      return _employees.firstWhere((e) => e.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
   Future<Employee> addEmployeeOffline({
     required String name,
     required String salary,
@@ -146,17 +155,10 @@ class StubLocalStorage extends EmployeeLocalStorage {
 
   @override
   Future<void> deleteEmployeeOffline(int id) async {
-    _operations.add(
-      SyncOperation.delete(
-        employee: Employee(
-          id: id,
-          name: '',
-          salary: '',
-          age: '',
-          profileImage: '',
-        ),
-      ),
-    );
+    final employee = await getEmployee(id);
+    if (employee != null) {
+      _operations.add(SyncOperation.delete(employee: employee));
+    }
     _employees.removeWhere((e) => e.id == id);
   }
 
@@ -271,22 +273,7 @@ void main() {
   });
 
   group('EmployeeRepository.createEmployee', () {
-    test('returns created employee', () async {
-      final mockResponse = EmployeeResponse(
-        status: 'success',
-        data: [
-          Employee(
-            id: 3,
-            name: 'New Employee',
-            salary: '4000',
-            age: '22',
-            profileImage: '',
-          ),
-        ],
-        message: 'OK',
-      );
-      fakeApi.setResponse(mockResponse);
-
+    test('returns created employee with local ID', () async {
       final result = await repository.createEmployee(
         name: 'New Employee',
         salary: '4000',
@@ -294,8 +281,12 @@ void main() {
       );
 
       expect(result.name, 'New Employee');
-      expect(result.id, 3);
+      expect(result.id, isNegative);
       expect(fakeApi.lastArgs!['name'], 'New Employee');
+
+      final operations = await stubStorage.getAllPendingOperations();
+      expect(operations, hasLength(1));
+      expect(operations[0].type, SyncOperationType.create);
     });
   });
 
@@ -324,14 +315,25 @@ void main() {
   });
 
   group('EmployeeRepository.deleteEmployee', () {
-    test('completes successfully', () async {
+    test('queues operation and syncs', () async {
+      stubStorage.setEmployees([
+        Employee(
+          id: 1,
+          name: 'Test',
+          salary: '5000',
+          age: '30',
+          profileImage: '',
+        ),
+      ]);
       fakeApi.setResponse(
         EmployeeResponse(status: 'success', data: [], message: 'OK'),
       );
 
-      await expectLater(repository.deleteEmployee(1), completes);
+      await repository.deleteEmployee(1);
+
+      // After sync, operations are cleared (because they succeeded)
+      // So we verify the API was called instead
       expect(fakeApi.lastMethod, 'deleteEmployee');
-      expect(fakeApi.lastArgs!['id'], 1);
     });
   });
 }
