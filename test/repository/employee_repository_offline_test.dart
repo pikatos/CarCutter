@@ -138,7 +138,17 @@ class StubLocalStorage extends EmployeeLocalStorage {
 
   @override
   Future<void> deleteEmployeeOffline(int id) async {
-    _operations.add(SyncOperation.delete(employeeId: id));
+    _operations.add(
+      SyncOperation.delete(
+        employee: Employee(
+          id: id,
+          name: '',
+          salary: '',
+          age: '',
+          profileImage: '',
+        ),
+      ),
+    );
     _employees.removeWhere((e) => e.id == id);
   }
 
@@ -289,8 +299,8 @@ void main() {
       final operations = await stubStorage.loadPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.create);
-      expect(operations[0].employee!.name, 'Offline Create');
-      expect(operations[0].employee!.id, result.id);
+      expect(operations[0].employee.name, 'Offline Create');
+      expect(operations[0].employee.id, result.id);
     });
   });
 
@@ -341,7 +351,7 @@ void main() {
       final operations = await stubStorage.loadPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.update);
-      expect(operations[0].employee!.name, 'Offline Update');
+      expect(operations[0].employee.name, 'Offline Update');
     });
   });
 
@@ -375,7 +385,7 @@ void main() {
       final operations = await stubStorage.loadPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.delete);
-      expect(operations[0].employeeId, 42);
+      expect(operations[0].employee.id, 42);
     });
   });
 
@@ -444,7 +454,17 @@ void main() {
         EmployeeResponse(status: 'success', data: [], message: 'OK'),
       );
 
-      await stubStorage.addSyncOperation(SyncOperation.delete(employeeId: 5));
+      await stubStorage.addSyncOperation(
+        SyncOperation.delete(
+          employee: Employee(
+            id: 5,
+            name: '',
+            salary: '',
+            age: '',
+            profileImage: '',
+          ),
+        ),
+      );
 
       await repository.syncPendingOperations();
 

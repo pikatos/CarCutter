@@ -125,7 +125,10 @@ class EmployeeLocalStorage {
   }
 
   Future<void> deleteEmployeeOffline(int id) async {
-    await addSyncOperation(SyncOperation.delete(employeeId: id));
+    final employee = await getEmployee(id);
+    if (employee != null) {
+      await addSyncOperation(SyncOperation.delete(employee: employee));
+    }
     await deleteEmployee(id);
   }
 

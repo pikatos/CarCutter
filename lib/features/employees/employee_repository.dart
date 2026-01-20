@@ -107,21 +107,19 @@ class EmployeeRepository with ChangeNotifier {
         switch (operation.type) {
           case SyncOperationType.create:
             final response = await _api.createEmployee(
-              name: operation.employee!.name,
-              salary: operation.employee!.salary,
-              age: operation.employee!.age,
+              name: operation.employee.name,
+              salary: operation.employee.salary,
+              age: operation.employee.age,
             );
             final created = response.data.first;
 
-            if (operation.employee != null) {
-              await _localStorage.updateEmployee(created);
-            }
+            await _localStorage.updateEmployee(created);
             break;
           case SyncOperationType.update:
-            await _api.updateEmployee(operation.employee!);
+            await _api.updateEmployee(operation.employee);
             break;
           case SyncOperationType.delete:
-            await _api.deleteEmployee(operation.employeeId!);
+            await _api.deleteEmployee(operation.employee.id);
             break;
         }
       } catch (e) {

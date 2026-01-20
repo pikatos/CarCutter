@@ -86,30 +86,25 @@ enum SyncOperationType { create, update, delete }
 
 class SyncOperation {
   final SyncOperationType type;
-  final Employee? employee;
-  final int? employeeId;
+  final Employee employee;
   final DateTime timestamp;
 
   SyncOperation.create({required this.employee})
     : type = SyncOperationType.create,
-      employeeId = null,
       timestamp = DateTime.now();
 
   SyncOperation.update({required this.employee})
     : type = SyncOperationType.update,
-      employeeId = null,
       timestamp = DateTime.now();
 
-  SyncOperation.delete({required this.employeeId})
+  SyncOperation.delete({required this.employee})
     : type = SyncOperationType.delete,
-      employee = null,
       timestamp = DateTime.now();
 
   Map<String, dynamic> toJson() {
     return {
       'type': type.index,
-      'employee': employee?.toJson(),
-      'employeeId': employeeId,
+      'employee': employee.toJson(),
       'timestamp': timestamp.toIso8601String(),
     };
   }
@@ -130,7 +125,11 @@ class SyncOperation {
           ),
         );
       case SyncOperationType.delete:
-        return SyncOperation.delete(employeeId: json['employeeId'] as int);
+        return SyncOperation.delete(
+          employee: Employee.fromLocalJson(
+            json['employee'] as Map<String, dynamic>,
+          ),
+        );
     }
   }
 }

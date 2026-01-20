@@ -149,17 +149,47 @@ void main() {
     });
 
     test('adds delete operation to queue', () async {
-      await storage.addSyncOperation(SyncOperation.delete(employeeId: 42));
+      await storage.addSyncOperation(
+        SyncOperation.delete(
+          employee: Employee(
+            id: 42,
+            name: '',
+            salary: '',
+            age: '',
+            profileImage: '',
+          ),
+        ),
+      );
 
       final operations = await storage.loadPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.delete);
-      expect(operations[0].employeeId, 42);
+      expect(operations[0].employee.id, 42);
     });
 
     test('clears pending operations', () async {
-      await storage.addSyncOperation(SyncOperation.delete(employeeId: 1));
-      await storage.addSyncOperation(SyncOperation.delete(employeeId: 2));
+      await storage.addSyncOperation(
+        SyncOperation.delete(
+          employee: Employee(
+            id: 1,
+            name: '',
+            salary: '',
+            age: '',
+            profileImage: '',
+          ),
+        ),
+      );
+      await storage.addSyncOperation(
+        SyncOperation.delete(
+          employee: Employee(
+            id: 2,
+            name: '',
+            salary: '',
+            age: '',
+            profileImage: '',
+          ),
+        ),
+      );
 
       await storage.clearPendingOperations();
 
@@ -168,7 +198,17 @@ void main() {
     });
 
     test('preserves order of operations', () async {
-      await storage.addSyncOperation(SyncOperation.delete(employeeId: 1));
+      await storage.addSyncOperation(
+        SyncOperation.delete(
+          employee: Employee(
+            id: 1,
+            name: '',
+            salary: '',
+            age: '',
+            profileImage: '',
+          ),
+        ),
+      );
       await storage.addSyncOperation(
         SyncOperation.create(
           employee: Employee(
@@ -215,7 +255,7 @@ void main() {
       final deserialized = SyncOperation.fromJson(json);
 
       expect(deserialized.type, SyncOperationType.create);
-      expect(deserialized.employee!.name, 'Test');
+      expect(deserialized.employee.name, 'Test');
     });
 
     test('update operation serializes and deserializes', () async {
@@ -232,17 +272,25 @@ void main() {
       final deserialized = SyncOperation.fromJson(json);
 
       expect(deserialized.type, SyncOperationType.update);
-      expect(deserialized.employee!.id, 1);
+      expect(deserialized.employee.id, 1);
     });
 
     test('delete operation serializes and deserializes', () async {
-      final operation = SyncOperation.delete(employeeId: 42);
+      final operation = SyncOperation.delete(
+        employee: Employee(
+          id: 42,
+          name: '',
+          salary: '',
+          age: '',
+          profileImage: '',
+        ),
+      );
 
       final json = operation.toJson();
       final deserialized = SyncOperation.fromJson(json);
 
       expect(deserialized.type, SyncOperationType.delete);
-      expect(deserialized.employeeId, 42);
+      expect(deserialized.employee.id, 42);
     });
   });
 }

@@ -146,7 +146,17 @@ class StubLocalStorage extends EmployeeLocalStorage {
 
   @override
   Future<void> deleteEmployeeOffline(int id) async {
-    _operations.add(SyncOperation.delete(employeeId: id));
+    _operations.add(
+      SyncOperation.delete(
+        employee: Employee(
+          id: id,
+          name: '',
+          salary: '',
+          age: '',
+          profileImage: '',
+        ),
+      ),
+    );
     _employees.removeWhere((e) => e.id == id);
   }
 
