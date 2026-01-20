@@ -71,7 +71,7 @@ class EmployeeRepository with ChangeNotifier {
       );
 
       await _localStorage.addSyncOperation(
-        SyncOperation.create(employee: employee, localId: localId),
+        SyncOperation.create(employee: employee),
       );
 
       final cached = await _localStorage.loadEmployees();
@@ -151,9 +151,11 @@ class EmployeeRepository with ChangeNotifier {
             );
             final created = response.data.first;
 
-            if (operation.localId != null) {
+            if (operation.employee != null) {
               final cached = await _localStorage.loadEmployees();
-              final index = cached.indexWhere((e) => e.id == operation.localId);
+              final index = cached.indexWhere(
+                (e) => e.id == operation.employee!.id,
+              );
               if (index != -1) {
                 cached[index] = created;
               } else {

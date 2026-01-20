@@ -239,7 +239,7 @@ void main() {
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.create);
       expect(operations[0].employee!.name, 'Offline Create');
-      expect(operations[0].localId, result.id);
+      expect(operations[0].employee!.id, result.id);
     });
   });
 
@@ -354,7 +354,6 @@ void main() {
             age: '30',
             profileImage: '',
           ),
-          localId: -1,
         ),
       );
 
