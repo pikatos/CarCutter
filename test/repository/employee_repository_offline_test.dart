@@ -433,4 +433,121 @@ void main() {
       expect(operations, isEmpty);
     });
   });
+
+  group('getAllEmployees merges server data with pending operations', () {
+    test('includes pending creates alongside server employees', () async {
+      fakeApi.setResponse(
+        EmployeeResponse(
+          status: 'success',
+          data: [
+            Employee(
+              id: 1,
+              name: 'Server Employee',
+              salary: '5000',
+              age: '30',
+              profileImage: '',
+            ),
+          ],
+          message: 'OK',
+        ),
+      );
+
+      await stubStorage.addSyncOperation(
+        SyncOperation.create(
+          employee: Employee(
+            id: -1,
+            name: 'Local Create',
+            salary: '4000',
+            age: '25',
+            profileImage: '',
+          ),
+        ),
+      );
+
+      final employees = await repository.getAllEmployees();
+
+      expect(employees, hasLength(2));
+      expect(employees[0].name, 'Server Employee');
+      expect(employees[1].name, 'Local Create');
+      expect(employees[1].id, isNegative);
+    });
+
+    test('overrides server data with pending updates', () async {
+      fakeApi.setResponse(
+        EmployeeResponse(
+          status: 'success',
+          data: [
+            Employee(
+              id: 1,
+              name: 'Original',
+              salary: '5000',
+              age: '30',
+              profileImage: '',
+            ),
+          ],
+          message: 'OK',
+        ),
+      );
+
+      await stubStorage.addSyncOperation(
+        SyncOperation.update(
+          employee: Employee(
+            id: 1,
+            name: 'Updated',
+            salary: '6000',
+            age: '35',
+            profileImage: '',
+          ),
+        ),
+      );
+
+      final employees = await repository.getAllEmployees();
+
+      expect(employees, hasLength(1));
+      expect(employees[0].name, 'Updated');
+      expect(employees[0].salary, '6000');
+    });
+
+    test('removes deleted employees from server data', () async {
+      fakeApi.setResponse(
+        EmployeeResponse(
+          status: 'success',
+          data: [
+            Employee(
+              id: 1,
+              name: 'To Delete',
+              salary: '5000',
+              age: '30',
+              profileImage: '',
+            ),
+            Employee(
+              id: 2,
+              name: 'To Keep',
+              salary: '6000',
+              age: '25',
+              profileImage: '',
+            ),
+          ],
+          message: 'OK',
+        ),
+      );
+
+      await stubStorage.addSyncOperation(
+        SyncOperation.delete(
+          employee: Employee(
+            id: 1,
+            name: 'To Delete',
+            salary: '5000',
+            age: '30',
+            profileImage: '',
+          ),
+        ),
+      );
+
+      final employees = await repository.getAllEmployees();
+
+      expect(employees, hasLength(1));
+      expect(employees[0].name, 'To Keep');
+    });
+  });
 }
