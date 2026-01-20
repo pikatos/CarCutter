@@ -102,6 +102,8 @@ class EmployeeRepository with ChangeNotifier {
     final operations = await _localStorage.getAllPendingOperations();
     if (operations.isEmpty) return;
 
+    final failedOperations = <SyncOperation>[];
+
     for (final operation in operations) {
       try {
         switch (operation.type) {
@@ -123,11 +125,14 @@ class EmployeeRepository with ChangeNotifier {
             break;
         }
       } catch (e) {
-        continue;
+        failedOperations.add(operation);
       }
     }
 
-    await _localStorage.clearPendingOperations();
-    _offlineStatus.setOffline(false);
+    await _localStorage.savePendingOperations(failedOperations);
+
+    if (failedOperations.isEmpty) {
+      _offlineStatus.setOffline(false);
+    }
   }
 }

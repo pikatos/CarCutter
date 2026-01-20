@@ -66,7 +66,7 @@ class FakeEmployeeApi implements EmployeeApiInterface {
 
 class StubLocalStorage extends EmployeeLocalStorage {
   List<Employee> _employees = [];
-  final List<SyncOperation> _operations = [];
+  List<SyncOperation> _operations = [];
   int _nextLocalId = -1;
 
   void setEmployees(List<Employee> employees) {
@@ -153,8 +153,15 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
+  Future<int> getNextLocalId() async {
+    final id = _nextLocalId;
+    _nextLocalId--;
+    return id;
+  }
+
+  @override
   Future<List<SyncOperation>> getAllPendingOperations() async {
-    return List.from(_operations);
+    return List<SyncOperation>.from(_operations);
   }
 
   @override
@@ -163,15 +170,13 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
-  Future<void> clearPendingOperations() async {
-    _operations.clear();
+  Future<void> savePendingOperations(List<SyncOperation> operations) async {
+    _operations = List<SyncOperation>.from(operations);
   }
 
   @override
-  Future<int> getNextLocalId() async {
-    final id = _nextLocalId;
-    _nextLocalId--;
-    return id;
+  Future<void> clearPendingOperations() async {
+    _operations.clear();
   }
 }
 
@@ -478,7 +483,19 @@ void main() {
       expect(offlineStatus.isOffline, isTrue);
 
       fakeApi.setResponse(
-        EmployeeResponse(status: 'success', data: [], message: 'OK'),
+        EmployeeResponse(
+          status: 'success',
+          data: [
+            Employee(
+              id: 10,
+              name: 'Test',
+              salary: '5000',
+              age: '30',
+              profileImage: '',
+            ),
+          ],
+          message: 'OK',
+        ),
       );
       await repository.syncPendingOperations();
 
