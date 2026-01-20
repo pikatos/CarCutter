@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:carcutter/features/employees/employee_api.dart';
+import 'package:carcutter/features/employees/employee_local_storage.dart';
 import 'package:carcutter/features/employees/employee_model.dart';
 import 'package:carcutter/features/employees/employee_repository.dart';
+import 'package:carcutter/features/employees/offline_status_provider.dart';
 
 class FakeEmployeeApi implements Fake {
   EmployeeResponse? _nextResponse;
@@ -72,13 +74,57 @@ class StubEmployeeApi implements EmployeeApiInterface {
   }
 }
 
+class StubLocalStorage extends EmployeeLocalStorage {
+  List<Employee> _employees = [];
+  List<SyncOperation> _operations = [];
+
+  void setEmployees(List<Employee> employees) {
+    _employees = List.from(employees);
+  }
+
+  @override
+  Future<List<Employee>> loadEmployees() async {
+    return List.from(_employees);
+  }
+
+  @override
+  Future<void> saveEmployees(List<Employee> employees) async {
+    _employees = List.from(employees);
+  }
+
+  @override
+  Future<List<SyncOperation>> loadPendingOperations() async {
+    return List.from(_operations);
+  }
+
+  @override
+  Future<void> addSyncOperation(SyncOperation operation) async {
+    _operations.add(operation);
+  }
+
+  @override
+  Future<void> clearPendingOperations() async {
+    _operations.clear();
+  }
+}
+
 void main() {
   late FakeEmployeeApi fakeApi;
+  late StubEmployeeApi stubApi;
+  late StubLocalStorage stubStorage;
+  late OfflineStatus offlineStatus;
   late EmployeeRepository repository;
 
   setUp(() {
     fakeApi = FakeEmployeeApi();
-    repository = EmployeeRepository(api: StubEmployeeApi(fakeApi));
+    stubApi = StubEmployeeApi(fakeApi);
+    stubStorage = StubLocalStorage();
+    offlineStatus = OfflineStatus();
+    repository = EmployeeRepository(
+      api: stubApi,
+      localStorage: stubStorage,
+      offlineStatus: offlineStatus,
+    );
   });
 
   group('EmployeeRepository.getAllEmployees', () {
@@ -103,12 +149,6 @@ void main() {
       expect(result, hasLength(1));
       expect(result[0].name, 'John');
       expect(fakeApi.lastMethod, 'getAllEmployees');
-    });
-
-    test('propagates exception from API', () async {
-      fakeApi.setException(Exception('API Error'));
-
-      expect(() => repository.getAllEmployees(), throwsException);
     });
 
     test('returns empty list when API returns empty', () async {
@@ -174,16 +214,6 @@ void main() {
       expect(result.id, 3);
       expect(fakeApi.lastArgs!['name'], 'New Employee');
     });
-
-    test('propagates exception on failure', () async {
-      fakeApi.setException(Exception('Create Failed'));
-
-      expect(
-        () =>
-            repository.createEmployee(name: 'Test', salary: '1000', age: '20'),
-        throwsException,
-      );
-    });
   });
 
   group('EmployeeRepository.updateEmployee', () {
@@ -219,12 +249,6 @@ void main() {
       await expectLater(repository.deleteEmployee(1), completes);
       expect(fakeApi.lastMethod, 'deleteEmployee');
       expect(fakeApi.lastArgs!['id'], 1);
-    });
-
-    test('propagates exception', () async {
-      fakeApi.setException(Exception('Delete Failed'));
-
-      expect(() => repository.deleteEmployee(1), throwsException);
     });
   });
 }

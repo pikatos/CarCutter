@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Employee {
   final int id;
   final String name;
@@ -29,7 +31,17 @@ class Employee {
       name: json['name'] as String,
       salary: json['salary'] as String,
       age: json['age'] as String,
-      profileImage: '',
+      profileImage: json['profile_image'] as String? ?? '',
+    );
+  }
+
+  factory Employee.fromLocalJson(Map<String, dynamic> json) {
+    return Employee(
+      id: json['id'] as int,
+      name: json['employee_name'] as String,
+      salary: json['employee_salary'] as String,
+      age: json['employee_age'] as String,
+      profileImage: json['profile_image'] as String? ?? '',
     );
   }
 
@@ -69,5 +81,58 @@ class EmployeeResponse {
       data: employees,
       message: json['message'] as String,
     );
+  }
+}
+
+enum SyncOperationType { create, update, delete }
+
+class SyncOperation {
+  final SyncOperationType type;
+  final Employee? employee;
+  final int? employeeId;
+  final DateTime timestamp;
+
+  SyncOperation.create({required this.employee})
+    : type = SyncOperationType.create,
+      employeeId = null,
+      timestamp = DateTime.now();
+
+  SyncOperation.update({required this.employee})
+    : type = SyncOperationType.update,
+      employeeId = null,
+      timestamp = DateTime.now();
+
+  SyncOperation.delete({required this.employeeId})
+    : type = SyncOperationType.delete,
+      employee = null,
+      timestamp = DateTime.now();
+
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type.index,
+      'employee': employee?.toJson(),
+      'employeeId': employeeId,
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  factory SyncOperation.fromJson(Map<String, dynamic> json) {
+    final type = SyncOperationType.values[json['type'] as int];
+    switch (type) {
+      case SyncOperationType.create:
+        return SyncOperation.create(
+          employee: Employee.fromLocalJson(
+            json['employee'] as Map<String, dynamic>,
+          ),
+        );
+      case SyncOperationType.update:
+        return SyncOperation.update(
+          employee: Employee.fromLocalJson(
+            json['employee'] as Map<String, dynamic>,
+          ),
+        );
+      case SyncOperationType.delete:
+        return SyncOperation.delete(employeeId: json['employeeId'] as int);
+    }
   }
 }

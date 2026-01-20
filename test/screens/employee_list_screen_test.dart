@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:carcutter/features/employees/employee_api.dart';
 import 'package:carcutter/features/employees/employee_list_screen.dart';
+import 'package:carcutter/features/employees/employee_local_storage.dart';
 import 'package:carcutter/features/employees/employee_model.dart';
 import 'package:carcutter/features/employees/employee_repository.dart';
+import 'package:carcutter/features/employees/offline_status_provider.dart';
 
 class StubEmployeeApi implements EmployeeApiInterface {
   List<Employee> _employees = [];
@@ -70,17 +72,61 @@ class StubEmployeeApi implements EmployeeApiInterface {
   }
 }
 
+class StubLocalStorage extends EmployeeLocalStorage {
+  List<Employee> _employees = [];
+  List<SyncOperation> _operations = [];
+
+  void setEmployees(List<Employee> employees) {
+    _employees = List.from(employees);
+  }
+
+  @override
+  Future<List<Employee>> loadEmployees() async {
+    return List.from(_employees);
+  }
+
+  @override
+  Future<void> saveEmployees(List<Employee> employees) async {
+    _employees = List.from(employees);
+  }
+
+  @override
+  Future<List<SyncOperation>> loadPendingOperations() async {
+    return List.from(_operations);
+  }
+
+  @override
+  Future<void> addSyncOperation(SyncOperation operation) async {
+    _operations.add(operation);
+  }
+
+  @override
+  Future<void> clearPendingOperations() async {
+    _operations.clear();
+  }
+}
+
 void main() {
   late StubEmployeeApi stubApi;
+  late StubLocalStorage stubStorage;
 
   setUp(() {
     stubApi = StubEmployeeApi();
+    stubStorage = StubLocalStorage();
   });
 
   Widget createWidgetWithRepository() {
-    final repository = EmployeeRepository(api: stubApi);
+    final offlineStatus = OfflineStatus();
+    final repository = EmployeeRepository(
+      api: stubApi,
+      localStorage: stubStorage,
+      offlineStatus: offlineStatus,
+    );
     return MultiProvider(
-      providers: [Provider<EmployeeRepository>.value(value: repository)],
+      providers: [
+        ChangeNotifierProvider<EmployeeRepository>.value(value: repository),
+        ChangeNotifierProvider<OfflineStatus>.value(value: offlineStatus),
+      ],
       child: const MaterialApp(home: EmployeeListScreen()),
     );
   }
@@ -103,12 +149,17 @@ void main() {
       expect(find.text('No employees found'), findsOneWidget);
     });
 
-    testWidgets('shows error state on exception', (WidgetTester tester) async {
+    testWidgets('shows offline state on exception', (
+      WidgetTester tester,
+    ) async {
       stubApi.setException(Exception('Network Error'));
       await tester.pumpWidget(createWidgetWithRepository());
       await tester.pumpAndSettle();
-      expect(find.text('Error: Exception: Network Error'), findsOneWidget);
-      expect(find.text('Retry'), findsOneWidget);
+      expect(find.text('No employees found'), findsOneWidget);
+      expect(
+        find.text('Offline - changes will sync when connected'),
+        findsOneWidget,
+      );
     });
   });
 

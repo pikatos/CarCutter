@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'employee_model.dart';
 import 'employee_form_screen.dart';
+import 'offline_banner.dart';
 
 class EmployeeDetailsScreen extends StatefulWidget {
   final Employee employee;
@@ -52,48 +53,58 @@ class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
           onPressed: _navigateToEdit,
           child: const Icon(Icons.edit),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.deepPurple,
-                  child: Text(
-                    _employee.name[0],
-                    style: const TextStyle(fontSize: 40, color: Colors.white),
-                  ),
+        body: Column(
+          children: [
+            const OfflineBanner(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.deepPurple,
+                        child: Text(
+                          _employee.name[0],
+                          style: const TextStyle(
+                            fontSize: 40,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildDetailTile(
+                      icon: Icons.badge,
+                      label: 'Name',
+                      value: _employee.name,
+                    ),
+                    _buildDetailTile(
+                      icon: Icons.attach_money,
+                      label: 'Salary',
+                      value: '\$${_employee.salary}',
+                    ),
+                    _buildDetailTile(
+                      icon: Icons.cake,
+                      label: 'Age',
+                      value: '${_employee.age} years',
+                    ),
+                    if (_employee.profileImage.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Profile Image',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 8),
+                      Image.network(_employee.profileImage),
+                    ],
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-              _buildDetailTile(
-                icon: Icons.badge,
-                label: 'Name',
-                value: _employee.name,
-              ),
-              _buildDetailTile(
-                icon: Icons.attach_money,
-                label: 'Salary',
-                value: '\$${_employee.salary}',
-              ),
-              _buildDetailTile(
-                icon: Icons.cake,
-                label: 'Age',
-                value: '${_employee.age} years',
-              ),
-              if (_employee.profileImage.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                const Text(
-                  'Profile Image',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const SizedBox(height: 8),
-                Image.network(_employee.profileImage),
-              ],
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
