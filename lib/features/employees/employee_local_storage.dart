@@ -39,6 +39,27 @@ class EmployeeLocalStorage {
     await file.writeAsString(jsonEncode(json));
   }
 
+  Future<void> addEmployee(Employee employee) async {
+    final employees = await loadEmployees();
+    employees.add(employee);
+    await saveEmployees(employees);
+  }
+
+  Future<void> updateEmployee(Employee employee) async {
+    final employees = await loadEmployees();
+    final index = employees.indexWhere((e) => e.id == employee.id);
+    if (index != -1) {
+      employees[index] = employee;
+      await saveEmployees(employees);
+    }
+  }
+
+  Future<void> deleteEmployee(int id) async {
+    final employees = await loadEmployees();
+    employees.removeWhere((e) => e.id == id);
+    await saveEmployees(employees);
+  }
+
   Future<int> getNextLocalId() async {
     await _loadLocalIdCounter();
     final id = _localIdCounter;

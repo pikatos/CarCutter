@@ -53,9 +53,7 @@ class EmployeeRepository with ChangeNotifier {
       );
       final created = response.data.first;
 
-      final cached = await _localStorage.loadEmployees();
-      cached.add(created);
-      await _localStorage.saveEmployees(cached);
+      await _localStorage.addEmployee(created);
 
       return created;
     } catch (e) {
@@ -74,9 +72,7 @@ class EmployeeRepository with ChangeNotifier {
         SyncOperation.create(employee: employee),
       );
 
-      final cached = await _localStorage.loadEmployees();
-      cached.add(employee);
-      await _localStorage.saveEmployees(cached);
+      await _localStorage.addEmployee(employee);
 
       return employee;
     }
@@ -87,12 +83,7 @@ class EmployeeRepository with ChangeNotifier {
       final response = await _api.updateEmployee(employee);
       final updated = response.data.first;
 
-      final cached = await _localStorage.loadEmployees();
-      final index = cached.indexWhere((e) => e.id == updated.id);
-      if (index != -1) {
-        cached[index] = updated;
-      }
-      await _localStorage.saveEmployees(cached);
+      await _localStorage.updateEmployee(updated);
 
       return updated;
     } catch (e) {
@@ -102,12 +93,7 @@ class EmployeeRepository with ChangeNotifier {
         SyncOperation.update(employee: employee),
       );
 
-      final cached = await _localStorage.loadEmployees();
-      final index = cached.indexWhere((e) => e.id == employee.id);
-      if (index != -1) {
-        cached[index] = employee;
-        await _localStorage.saveEmployees(cached);
-      }
+      await _localStorage.updateEmployee(employee);
 
       return employee;
     }
@@ -117,9 +103,7 @@ class EmployeeRepository with ChangeNotifier {
     try {
       await _api.deleteEmployee(id);
 
-      final cached = await _localStorage.loadEmployees();
-      cached.removeWhere((e) => e.id == id);
-      await _localStorage.saveEmployees(cached);
+      await _localStorage.deleteEmployee(id);
     } catch (e) {
       _offlineStatus.setOffline(true);
 
@@ -127,12 +111,7 @@ class EmployeeRepository with ChangeNotifier {
         SyncOperation.delete(employeeId: id),
       );
 
-      final cached = await _localStorage.loadEmployees();
-      final index = cached.indexWhere((e) => e.id == id);
-      if (index != -1) {
-        cached.removeAt(index);
-        await _localStorage.saveEmployees(cached);
-      }
+      await _localStorage.deleteEmployee(id);
     }
   }
 
@@ -152,16 +131,7 @@ class EmployeeRepository with ChangeNotifier {
             final created = response.data.first;
 
             if (operation.employee != null) {
-              final cached = await _localStorage.loadEmployees();
-              final index = cached.indexWhere(
-                (e) => e.id == operation.employee!.id,
-              );
-              if (index != -1) {
-                cached[index] = created;
-              } else {
-                cached.add(created);
-              }
-              await _localStorage.saveEmployees(cached);
+              await _localStorage.updateEmployee(created);
             }
             break;
           case SyncOperationType.update:
