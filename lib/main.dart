@@ -16,8 +16,39 @@ void main() {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _wasOffline = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      OfflineStatus status = context.read<OfflineStatus>();
+      status.addListener(_onOfflineStatusChanged);
+      _wasOffline = status.isOffline;
+    });
+  }
+
+  @override
+  void dispose() {
+    context.read<OfflineStatus>().removeListener(_onOfflineStatusChanged);
+    super.dispose();
+  }
+
+  void _onOfflineStatusChanged() {
+    final isOffline = context.read<OfflineStatus>().isOffline;
+    if (_wasOffline && !isOffline) {
+      context.read<EmployeeRepository>().syncPendingOperations();
+    }
+    _wasOffline = isOffline;
+  }
 
   @override
   Widget build(BuildContext context) {
