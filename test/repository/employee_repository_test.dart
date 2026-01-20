@@ -77,6 +77,7 @@ class StubEmployeeApi implements EmployeeApiInterface {
 class StubLocalStorage extends EmployeeLocalStorage {
   List<Employee> _employees = [];
   List<SyncOperation> _operations = [];
+  int _nextLocalId = -1;
 
   void setEmployees(List<Employee> employees) {
     _employees = List.from(employees);
@@ -93,6 +94,63 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
+  Future<void> addEmployee(Employee employee) async {
+    _employees.add(employee);
+  }
+
+  @override
+  Future<Employee> addEmployeeOffline({
+    required String name,
+    required String salary,
+    required String age,
+  }) async {
+    final localId = _nextLocalId;
+    _nextLocalId--;
+    final employee = Employee(
+      id: localId,
+      name: name,
+      salary: salary,
+      age: age,
+      profileImage: '',
+    );
+    _operations.add(SyncOperation.create(employee: employee));
+    _employees.add(employee);
+    return employee;
+  }
+
+  @override
+  Future<void> updateEmployee(Employee employee) async {
+    final index = _employees.indexWhere((e) => e.id == employee.id);
+    if (index != -1) {
+      _employees[index] = employee;
+    } else {
+      _employees.add(employee);
+    }
+  }
+
+  @override
+  Future<void> updateEmployeeOffline(Employee employee) async {
+    _operations.add(SyncOperation.update(employee: employee));
+    final index = _employees.indexWhere((e) => e.id == employee.id);
+    if (index != -1) {
+      _employees[index] = employee;
+    } else {
+      _employees.add(employee);
+    }
+  }
+
+  @override
+  Future<void> deleteEmployee(int id) async {
+    _employees.removeWhere((e) => e.id == id);
+  }
+
+  @override
+  Future<void> deleteEmployeeOffline(int id) async {
+    _operations.add(SyncOperation.delete(employeeId: id));
+    _employees.removeWhere((e) => e.id == id);
+  }
+
+  @override
   Future<List<SyncOperation>> loadPendingOperations() async {
     return List.from(_operations);
   }
@@ -106,9 +164,18 @@ class StubLocalStorage extends EmployeeLocalStorage {
   Future<void> clearPendingOperations() async {
     _operations.clear();
   }
+
+  @override
+  Future<int> getNextLocalId() async {
+    final id = _nextLocalId;
+    _nextLocalId--;
+    return id;
+  }
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late FakeEmployeeApi fakeApi;
   late StubEmployeeApi stubApi;
   late StubLocalStorage stubStorage;

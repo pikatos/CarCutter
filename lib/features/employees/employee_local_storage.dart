@@ -10,7 +10,25 @@ class EmployeeLocalStorage {
 
   int _localIdCounter = -1;
 
-  Future<List<Employee>> loadEmployees() async {
+  List<Employee> _employees = [];
+  bool _employeesLoaded = false;
+
+  List<SyncOperation> _pendingOperations = [];
+  bool _operationsLoaded = false;
+
+  Future<void> _ensureEmployeesLoaded() async {
+    if (_employeesLoaded) return;
+    _employees = await _loadEmployeesFromFile();
+    _employeesLoaded = true;
+  }
+
+  Future<void> _ensureOperationsLoaded() async {
+    if (_operationsLoaded) return;
+    _pendingOperations = await _loadOperationsFromFile();
+    _operationsLoaded = true;
+  }
+
+  Future<List<Employee>> _loadEmployeesFromFile() async {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/$_employeesFile');
 
@@ -30,19 +48,30 @@ class EmployeeLocalStorage {
     }
   }
 
-  Future<void> saveEmployees(List<Employee> employees) async {
+  Future<void> _saveEmployeesToFile() async {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/$_employeesFile');
 
-    final json = {'data': employees.map((e) => e.toJson()).toList()};
+    final json = {'data': _employees.map((e) => e.toJson()).toList()};
 
     await file.writeAsString(jsonEncode(json));
   }
 
+  Future<List<Employee>> loadEmployees() async {
+    await _ensureEmployeesLoaded();
+    return List<Employee>.from(_employees);
+  }
+
+  Future<void> saveEmployees(List<Employee> employees) async {
+    await _ensureEmployeesLoaded();
+    _employees = List<Employee>.from(employees);
+    await _saveEmployeesToFile();
+  }
+
   Future<void> addEmployee(Employee employee) async {
-    final employees = await loadEmployees();
-    employees.add(employee);
-    await saveEmployees(employees);
+    await _ensureEmployeesLoaded();
+    _employees.add(employee);
+    await _saveEmployeesToFile();
   }
 
   Future<Employee> addEmployeeOffline({
@@ -67,11 +96,11 @@ class EmployeeLocalStorage {
   }
 
   Future<void> updateEmployee(Employee employee) async {
-    final employees = await loadEmployees();
-    final index = employees.indexWhere((e) => e.id == employee.id);
+    await _ensureEmployeesLoaded();
+    final index = _employees.indexWhere((e) => e.id == employee.id);
     if (index != -1) {
-      employees[index] = employee;
-      await saveEmployees(employees);
+      _employees[index] = employee;
+      await _saveEmployeesToFile();
     }
   }
 
@@ -81,9 +110,9 @@ class EmployeeLocalStorage {
   }
 
   Future<void> deleteEmployee(int id) async {
-    final employees = await loadEmployees();
-    employees.removeWhere((e) => e.id == id);
-    await saveEmployees(employees);
+    await _ensureEmployeesLoaded();
+    _employees.removeWhere((e) => e.id == id);
+    await _saveEmployeesToFile();
   }
 
   Future<void> deleteEmployeeOffline(int id) async {
@@ -122,7 +151,7 @@ class EmployeeLocalStorage {
     await file.writeAsString(jsonEncode(json));
   }
 
-  Future<List<SyncOperation>> loadPendingOperations() async {
+  Future<List<SyncOperation>> _loadOperationsFromFile() async {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/$_syncQueueFile');
 
@@ -142,22 +171,37 @@ class EmployeeLocalStorage {
     }
   }
 
-  Future<void> addSyncOperation(SyncOperation operation) async {
-    final operations = await loadPendingOperations();
-    operations.add(operation);
-    await savePendingOperations(operations);
-  }
-
-  Future<void> savePendingOperations(List<SyncOperation> operations) async {
+  Future<void> _saveOperationsToFile() async {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/$_syncQueueFile');
 
-    final json = {'operations': operations.map((e) => e.toJson()).toList()};
+    final json = {
+      'operations': _pendingOperations.map((e) => e.toJson()).toList(),
+    };
 
     await file.writeAsString(jsonEncode(json));
   }
 
+  Future<List<SyncOperation>> loadPendingOperations() async {
+    await _ensureOperationsLoaded();
+    return List<SyncOperation>.from(_pendingOperations);
+  }
+
+  Future<void> addSyncOperation(SyncOperation operation) async {
+    await _ensureOperationsLoaded();
+    _pendingOperations.add(operation);
+    await _saveOperationsToFile();
+  }
+
+  Future<void> savePendingOperations(List<SyncOperation> operations) async {
+    await _ensureOperationsLoaded();
+    _pendingOperations = List<SyncOperation>.from(operations);
+    await _saveOperationsToFile();
+  }
+
   Future<void> clearPendingOperations() async {
+    await _ensureOperationsLoaded();
+    _pendingOperations.clear();
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/$_syncQueueFile');
 
