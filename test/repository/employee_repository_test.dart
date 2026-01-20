@@ -76,7 +76,7 @@ class StubEmployeeApi implements EmployeeApiInterface {
 
 class StubLocalStorage extends EmployeeLocalStorage {
   List<Employee> _employees = [];
-  List<SyncOperation> _operations = [];
+  final List<SyncOperation> _operations = [];
   int _nextLocalId = -1;
 
   void setEmployees(List<Employee> employees) {

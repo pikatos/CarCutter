@@ -8,7 +8,6 @@ import 'package:carcutter/features/employees/offline_status_provider.dart';
 class FakeEmployeeApi implements EmployeeApiInterface {
   EmployeeResponse? _nextResponse;
   Exception? _nextException;
-  int _callCount = 0;
 
   void setResponse(EmployeeResponse response) {
     _nextResponse = response;
@@ -28,7 +27,6 @@ class FakeEmployeeApi implements EmployeeApiInterface {
 
   @override
   Future<EmployeeResponse> getAllEmployees() async {
-    _callCount++;
     _onCall?.call();
     if (_nextException != null) throw _nextException!;
     return _nextResponse!;
@@ -36,7 +34,6 @@ class FakeEmployeeApi implements EmployeeApiInterface {
 
   @override
   Future<EmployeeResponse> getEmployee(int id) async {
-    _callCount++;
     _onCall?.call();
     if (_nextException != null) throw _nextException!;
     return _nextResponse!;
@@ -48,7 +45,6 @@ class FakeEmployeeApi implements EmployeeApiInterface {
     required String salary,
     required String age,
   }) async {
-    _callCount++;
     _onCall?.call();
     if (_nextException != null) throw _nextException!;
     return _nextResponse!;
@@ -56,7 +52,6 @@ class FakeEmployeeApi implements EmployeeApiInterface {
 
   @override
   Future<EmployeeResponse> updateEmployee(Employee employee) async {
-    _callCount++;
     _onCall?.call();
     if (_nextException != null) throw _nextException!;
     return _nextResponse!;
@@ -64,7 +59,6 @@ class FakeEmployeeApi implements EmployeeApiInterface {
 
   @override
   Future<void> deleteEmployee(int id) async {
-    _callCount++;
     _onCall?.call();
     if (_nextException != null) throw _nextException!;
   }
@@ -72,7 +66,7 @@ class FakeEmployeeApi implements EmployeeApiInterface {
 
 class StubLocalStorage extends EmployeeLocalStorage {
   List<Employee> _employees = [];
-  List<SyncOperation> _operations = [];
+  final List<SyncOperation> _operations = [];
   int _nextLocalId = -1;
 
   void setEmployees(List<Employee> employees) {
