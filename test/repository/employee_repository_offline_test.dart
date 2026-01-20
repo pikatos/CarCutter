@@ -3,7 +3,6 @@ import 'package:carcutter/features/employees/employee_api.dart';
 import 'package:carcutter/features/employees/employee_local_storage.dart';
 import 'package:carcutter/features/employees/employee_model.dart';
 import 'package:carcutter/features/employees/employee_repository.dart';
-import 'package:carcutter/features/employees/offline_status_provider.dart';
 
 class FakeEmployeeApi implements EmployeeApiInterface {
   EmployeeResponse? _nextResponse;
@@ -192,18 +191,12 @@ class StubLocalStorage extends EmployeeLocalStorage {
 void main() {
   late FakeEmployeeApi fakeApi;
   late StubLocalStorage stubStorage;
-  late OfflineStatus offlineStatus;
   late EmployeeRepository repository;
 
   setUp(() {
     fakeApi = FakeEmployeeApi();
     stubStorage = StubLocalStorage();
-    offlineStatus = OfflineStatus();
-    repository = EmployeeRepository(
-      api: fakeApi,
-      localStorage: stubStorage,
-      offlineStatus: offlineStatus,
-    );
+    repository = EmployeeRepository(api: fakeApi, localStorage: stubStorage);
   });
 
   group('EmployeeRepository getAllEmployees online', () {
@@ -227,7 +220,6 @@ void main() {
 
       expect(employees, hasLength(1));
       expect(employees[0].name, 'John');
-      expect(offlineStatus.isOffline, isFalse);
     });
 
     test('caches employees locally', () async {
@@ -266,7 +258,6 @@ void main() {
 
       expect(employees, hasLength(1));
       expect(employees[0].name, 'Offline');
-      expect(offlineStatus.isOffline, isTrue);
     });
   });
 
@@ -367,7 +358,6 @@ void main() {
       await repository.syncPendingOperations();
 
       expect(await stubStorage.getAllPendingOperations(), isEmpty);
-      expect(offlineStatus.isOffline, isFalse);
       expect(stubStorage.savedEmployees, hasLength(1));
       expect(stubStorage.savedEmployees[0].id, 10);
     });
@@ -439,7 +429,8 @@ void main() {
       );
       await repository.syncPendingOperations();
 
-      expect(offlineStatus.isOffline, isFalse);
+      final operations = await stubStorage.getAllPendingOperations();
+      expect(operations, isEmpty);
     });
   });
 }

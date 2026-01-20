@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'employee_repository.dart';
 import 'employee_model.dart';
-import 'offline_banner.dart';
 
 class EmployeeFormScreen extends StatefulWidget {
   final Employee? employee;
@@ -92,7 +91,6 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
       appBar: AppBar(title: Text(isEditing ? 'Edit Employee' : 'New Employee')),
       body: Column(
         children: [
-          const OfflineBanner(),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(16.0),

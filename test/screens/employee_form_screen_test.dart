@@ -5,7 +5,6 @@ import 'package:carcutter/features/employees/employee_api.dart';
 import 'package:carcutter/features/employees/employee_form_screen.dart';
 import 'package:carcutter/features/employees/employee_model.dart';
 import 'package:carcutter/features/employees/employee_repository.dart';
-import 'package:carcutter/features/employees/offline_status_provider.dart';
 
 class StubEmployeeApi implements EmployeeApiInterface {
   EmployeeResponse? _nextResponse;
@@ -70,11 +69,9 @@ void main() {
 
   Widget createFormWidget({Employee? employee}) {
     final repository = EmployeeRepository(api: stubApi);
-    final offlineStatus = OfflineStatus();
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<EmployeeRepository>.value(value: repository),
-        ChangeNotifierProvider<OfflineStatus>.value(value: offlineStatus),
       ],
       child: MaterialApp(home: EmployeeFormScreen(employee: employee)),
     );

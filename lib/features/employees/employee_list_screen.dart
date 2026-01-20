@@ -4,7 +4,6 @@ import 'employee_repository.dart';
 import 'employee_model.dart';
 import 'employee_details_screen.dart';
 import 'employee_form_screen.dart';
-import 'offline_banner.dart';
 
 class EmployeeListScreen extends StatefulWidget {
   const EmployeeListScreen({super.key});
@@ -113,12 +112,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
         onPressed: _navigateToCreate,
         child: const Icon(Icons.add),
       ),
-      body: Column(
-        children: [
-          const OfflineBanner(),
-          Expanded(child: _buildBody()),
-        ],
-      ),
+      body: Column(children: [Expanded(child: _buildBody())]),
     );
   }
 

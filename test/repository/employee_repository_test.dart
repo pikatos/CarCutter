@@ -3,7 +3,6 @@ import 'package:carcutter/features/employees/employee_api.dart';
 import 'package:carcutter/features/employees/employee_local_storage.dart';
 import 'package:carcutter/features/employees/employee_model.dart';
 import 'package:carcutter/features/employees/employee_repository.dart';
-import 'package:carcutter/features/employees/offline_status_provider.dart';
 
 class FakeEmployeeApi implements Fake {
   EmployeeResponse? _nextResponse;
@@ -197,19 +196,13 @@ void main() {
   late FakeEmployeeApi fakeApi;
   late StubEmployeeApi stubApi;
   late StubLocalStorage stubStorage;
-  late OfflineStatus offlineStatus;
   late EmployeeRepository repository;
 
   setUp(() {
     fakeApi = FakeEmployeeApi();
     stubApi = StubEmployeeApi(fakeApi);
     stubStorage = StubLocalStorage();
-    offlineStatus = OfflineStatus();
-    repository = EmployeeRepository(
-      api: stubApi,
-      localStorage: stubStorage,
-      offlineStatus: offlineStatus,
-    );
+    repository = EmployeeRepository(api: stubApi, localStorage: stubStorage);
   });
 
   group('EmployeeRepository.getAllEmployees', () {

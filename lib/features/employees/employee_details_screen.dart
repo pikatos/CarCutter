@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'employee_model.dart';
 import 'employee_form_screen.dart';
-import 'offline_banner.dart';
 
 class EmployeeDetailsScreen extends StatefulWidget {
   final Employee employee;
@@ -55,7 +54,6 @@ class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
         ),
         body: Column(
           children: [
-            const OfflineBanner(),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),

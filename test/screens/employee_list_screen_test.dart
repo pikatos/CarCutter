@@ -6,7 +6,6 @@ import 'package:carcutter/features/employees/employee_list_screen.dart';
 import 'package:carcutter/features/employees/employee_local_storage.dart';
 import 'package:carcutter/features/employees/employee_model.dart';
 import 'package:carcutter/features/employees/employee_repository.dart';
-import 'package:carcutter/features/employees/offline_status_provider.dart';
 
 class StubEmployeeApi implements EmployeeApiInterface {
   List<Employee> _employees = [];
@@ -160,16 +159,13 @@ void main() {
   });
 
   Widget createWidgetWithRepository() {
-    final offlineStatus = OfflineStatus();
     final repository = EmployeeRepository(
       api: stubApi,
       localStorage: stubStorage,
-      offlineStatus: offlineStatus,
     );
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<EmployeeRepository>.value(value: repository),
-        ChangeNotifierProvider<OfflineStatus>.value(value: offlineStatus),
       ],
       child: const MaterialApp(home: EmployeeListScreen()),
     );
@@ -191,19 +187,6 @@ void main() {
       await tester.pumpWidget(createWidgetWithRepository());
       await tester.pumpAndSettle();
       expect(find.text('No employees found'), findsOneWidget);
-    });
-
-    testWidgets('shows offline state on exception', (
-      WidgetTester tester,
-    ) async {
-      stubApi.setException(Exception('Network Error'));
-      await tester.pumpWidget(createWidgetWithRepository());
-      await tester.pumpAndSettle();
-      expect(find.text('No employees found'), findsOneWidget);
-      expect(
-        find.text('Offline - changes will sync when connected'),
-        findsOneWidget,
-      );
     });
   });
 

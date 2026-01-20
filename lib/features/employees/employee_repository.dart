@@ -2,30 +2,24 @@ import 'package:flutter/foundation.dart';
 import 'employee_api.dart';
 import 'employee_local_storage.dart';
 import 'employee_model.dart';
-import 'offline_status_provider.dart';
 
 class EmployeeRepository with ChangeNotifier {
   final EmployeeApiInterface _api;
   final EmployeeLocalStorage _localStorage;
-  final OfflineStatus _offlineStatus;
 
   EmployeeRepository({
     EmployeeApiInterface? api,
     EmployeeLocalStorage? localStorage,
-    OfflineStatus? offlineStatus,
   }) : _api = api ?? EmployeeApi(),
-       _localStorage = localStorage ?? EmployeeLocalStorage(),
-       _offlineStatus = offlineStatus ?? OfflineStatus();
+       _localStorage = localStorage ?? EmployeeLocalStorage();
 
   Future<List<Employee>> getAllEmployees() async {
     try {
       final response = await _api.getAllEmployees();
       final employees = response.data;
       await _localStorage.saveEmployees(employees);
-      _offlineStatus.setOffline(false);
       return employees;
     } catch (e) {
-      _offlineStatus.setOffline(true);
       return await _localStorage.getAllEmployees();
     }
   }
@@ -103,9 +97,5 @@ class EmployeeRepository with ChangeNotifier {
     }
 
     await _localStorage.savePendingOperations(failedOperations);
-
-    if (failedOperations.isEmpty) {
-      _offlineStatus.setOffline(false);
-    }
   }
 }
