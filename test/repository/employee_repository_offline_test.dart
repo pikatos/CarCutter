@@ -127,7 +127,24 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
+  Future<void> updateEmployeeOffline(Employee employee) async {
+    _operations.add(SyncOperation.update(employee: employee));
+    final index = _employees.indexWhere((e) => e.id == employee.id);
+    if (index != -1) {
+      _employees[index] = employee;
+    } else {
+      _employees.add(employee);
+    }
+  }
+
+  @override
   Future<void> deleteEmployee(int id) async {
+    _employees.removeWhere((e) => e.id == id);
+  }
+
+  @override
+  Future<void> deleteEmployeeOffline(int id) async {
+    _operations.add(SyncOperation.delete(employeeId: id));
     _employees.removeWhere((e) => e.id == id);
   }
 

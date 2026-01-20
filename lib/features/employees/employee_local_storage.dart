@@ -75,10 +75,20 @@ class EmployeeLocalStorage {
     }
   }
 
+  Future<void> updateEmployeeOffline(Employee employee) async {
+    await addSyncOperation(SyncOperation.update(employee: employee));
+    await updateEmployee(employee);
+  }
+
   Future<void> deleteEmployee(int id) async {
     final employees = await loadEmployees();
     employees.removeWhere((e) => e.id == id);
     await saveEmployees(employees);
+  }
+
+  Future<void> deleteEmployeeOffline(int id) async {
+    await addSyncOperation(SyncOperation.delete(employeeId: id));
+    await deleteEmployee(id);
   }
 
   Future<int> getNextLocalId() async {

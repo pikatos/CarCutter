@@ -78,12 +78,7 @@ class EmployeeRepository with ChangeNotifier {
     } catch (e) {
       _offlineStatus.setOffline(true);
 
-      await _localStorage.addSyncOperation(
-        SyncOperation.update(employee: employee),
-      );
-
-      await _localStorage.updateEmployee(employee);
-
+      await _localStorage.updateEmployeeOffline(employee);
       return employee;
     }
   }
@@ -96,11 +91,7 @@ class EmployeeRepository with ChangeNotifier {
     } catch (e) {
       _offlineStatus.setOffline(true);
 
-      await _localStorage.addSyncOperation(
-        SyncOperation.delete(employeeId: id),
-      );
-
-      await _localStorage.deleteEmployee(id);
+      await _localStorage.deleteEmployeeOffline(id);
     }
   }
 
