@@ -74,14 +74,11 @@ class FakeHttpClient extends Fake implements http.Client {
 
 void main() {
   late FakeHttpClient fakeClient;
+  late EmployeeApi api;
 
   setUp(() {
     fakeClient = FakeHttpClient();
-    EmployeeApi.client = fakeClient;
-  });
-
-  tearDown(() {
-    EmployeeApi.client = null;
+    api = EmployeeApi(client: fakeClient);
   });
 
   group('EmployeeApi.getAllEmployees', () {
@@ -110,7 +107,7 @@ void main() {
       ''';
       fakeClient.setResponse(responseBody, 200);
 
-      final response = await EmployeeApi.getAllEmployees();
+      final response = await api.getAllEmployees();
 
       expect(response.status, 'success');
       expect(response.data, hasLength(2));
@@ -129,7 +126,7 @@ void main() {
       ''';
       fakeClient.setResponse(responseBody, 200);
 
-      final response = await EmployeeApi.getAllEmployees();
+      final response = await api.getAllEmployees();
 
       expect(response.data, isEmpty);
     });
@@ -137,7 +134,7 @@ void main() {
     test('throws exception on non-200 status', () async {
       fakeClient.setResponse('Error', 500);
 
-      expect(() => EmployeeApi.getAllEmployees(), throwsException);
+      expect(() => api.getAllEmployees(), throwsException);
     });
   });
 
@@ -158,7 +155,7 @@ void main() {
       ''';
       fakeClient.setResponse(responseBody, 200);
 
-      final response = await EmployeeApi.getEmployee(1);
+      final response = await api.getEmployee(1);
 
       expect(response.data, hasLength(1));
       expect(response.data[0].id, 1);
@@ -168,7 +165,7 @@ void main() {
     test('throws exception on 404', () async {
       fakeClient.setResponse('Not Found', 404);
 
-      expect(() => EmployeeApi.getEmployee(999), throwsException);
+      expect(() => api.getEmployee(999), throwsException);
     });
   });
 
@@ -188,7 +185,7 @@ void main() {
       ''';
       fakeClient.setResponse(responseBody, 200);
 
-      final response = await EmployeeApi.createEmployee(
+      final response = await api.createEmployee(
         name: 'New Employee',
         salary: '4000',
         age: '22',
@@ -204,8 +201,7 @@ void main() {
       fakeClient.setResponse('Error', 400);
 
       expect(
-        () =>
-            EmployeeApi.createEmployee(name: 'Test', salary: '1000', age: '20'),
+        () => api.createEmployee(name: 'Test', salary: '1000', age: '20'),
         throwsException,
       );
     });
@@ -233,7 +229,7 @@ void main() {
         age: '35',
         profileImage: '',
       );
-      final response = await EmployeeApi.updateEmployee(employee);
+      final response = await api.updateEmployee(employee);
 
       expect(response.data, hasLength(1));
       expect(response.data[0].id, 42);
@@ -251,7 +247,7 @@ void main() {
         age: '20',
         profileImage: '',
       );
-      expect(() => EmployeeApi.updateEmployee(employee), throwsException);
+      expect(() => api.updateEmployee(employee), throwsException);
     });
   });
 
@@ -259,14 +255,14 @@ void main() {
     test('succeeds on 200', () async {
       fakeClient.setResponse('{}', 200);
 
-      await expectLater(EmployeeApi.deleteEmployee(1), completes);
+      await expectLater(api.deleteEmployee(1), completes);
       expect(fakeClient.lastMethod, 'DELETE');
     });
 
     test('throws exception on non-200', () async {
       fakeClient.setResponse('Error', 500);
 
-      expect(() => EmployeeApi.deleteEmployee(1), throwsException);
+      expect(() => api.deleteEmployee(1), throwsException);
     });
   });
 }
