@@ -70,7 +70,8 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
     final result = await Navigator.push<Employee>(
       context,
       MaterialPageRoute(
-        builder: (context) => EmployeeDetailsScreen(employee: employee),
+        builder: (context) =>
+            EmployeeDetailsScreen(employee: employee, repository: _repository),
       ),
     );
     if (result != null) {

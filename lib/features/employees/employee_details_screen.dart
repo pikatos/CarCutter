@@ -5,12 +5,12 @@ import 'employee_repository.dart';
 
 class EmployeeDetailsScreen extends StatefulWidget {
   final Employee employee;
-  final EmployeeRepository? repository;
+  final EmployeeRepository repository;
 
   const EmployeeDetailsScreen({
     super.key,
     required this.employee,
-    this.repository,
+    required this.repository,
   });
 
   @override
@@ -20,21 +20,21 @@ class EmployeeDetailsScreen extends StatefulWidget {
 class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
   late Employee _employee;
   bool _hasUpdated = false;
-  late final EmployeeRepository _repository;
 
   @override
   void initState() {
     super.initState();
     _employee = widget.employee;
-    _repository = widget.repository ?? EmployeeRepository();
   }
 
   void _navigateToEdit() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            EmployeeFormScreen(employee: _employee, repository: _repository),
+        builder: (context) => EmployeeFormScreen(
+          employee: _employee,
+          repository: widget.repository,
+        ),
       ),
     );
     if (result is Employee && mounted) {
