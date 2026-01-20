@@ -55,7 +55,9 @@ class EmployeeRepository with ChangeNotifier {
   Future<Employee> getEmployee(int id) async {
     try {
       final response = await _api.getEmployee(id);
-      return response.data.first;
+      final employee = response.data.first;
+      await _localStorage.updateEmployee(employee);
+      return employee;
     } catch (e) {
       final employee = await _localStorage.getEmployee(id);
       if (employee != null) {
