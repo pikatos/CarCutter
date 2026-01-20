@@ -6,6 +6,9 @@ import 'employee_model.dart';
 class EmployeeLocalStorage {
   static const String _employeesFile = 'employees.json';
   static const String _syncQueueFile = 'sync_queue.json';
+  static const String _localIdCounterFile = 'local_id_counter.json';
+
+  int _localIdCounter = -1;
 
   Future<List<Employee>> loadEmployees() async {
     final directory = await getApplicationDocumentsDirectory();
@@ -33,6 +36,37 @@ class EmployeeLocalStorage {
 
     final json = {'data': employees.map((e) => e.toJson()).toList()};
 
+    await file.writeAsString(jsonEncode(json));
+  }
+
+  Future<int> getNextLocalId() async {
+    await _loadLocalIdCounter();
+    final id = _localIdCounter;
+    _localIdCounter--;
+    await _saveLocalIdCounter();
+    return id;
+  }
+
+  Future<void> _loadLocalIdCounter() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/$_localIdCounterFile');
+
+    if (await file.exists()) {
+      try {
+        final jsonString = await file.readAsString();
+        final json = jsonDecode(jsonString) as Map<String, dynamic>;
+        _localIdCounter = json['counter'] as int;
+      } catch (e) {
+        _localIdCounter = -1;
+      }
+    }
+  }
+
+  Future<void> _saveLocalIdCounter() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/$_localIdCounterFile');
+
+    final json = {'counter': _localIdCounter};
     await file.writeAsString(jsonEncode(json));
   }
 

@@ -90,9 +90,10 @@ class SyncOperation {
   final SyncOperationType type;
   final Employee? employee;
   final int? employeeId;
+  final int? localId;
   final DateTime timestamp;
 
-  SyncOperation.create({required this.employee})
+  SyncOperation.create({required this.employee, this.localId})
     : type = SyncOperationType.create,
       employeeId = null,
       timestamp = DateTime.now();
@@ -100,11 +101,13 @@ class SyncOperation {
   SyncOperation.update({required this.employee})
     : type = SyncOperationType.update,
       employeeId = null,
+      localId = null,
       timestamp = DateTime.now();
 
   SyncOperation.delete({required this.employeeId})
     : type = SyncOperationType.delete,
       employee = null,
+      localId = null,
       timestamp = DateTime.now();
 
   Map<String, dynamic> toJson() {
@@ -112,6 +115,7 @@ class SyncOperation {
       'type': type.index,
       'employee': employee?.toJson(),
       'employeeId': employeeId,
+      'localId': localId,
       'timestamp': timestamp.toIso8601String(),
     };
   }
@@ -124,6 +128,7 @@ class SyncOperation {
           employee: Employee.fromLocalJson(
             json['employee'] as Map<String, dynamic>,
           ),
+          localId: json['localId'] as int?,
         );
       case SyncOperationType.update:
         return SyncOperation.update(

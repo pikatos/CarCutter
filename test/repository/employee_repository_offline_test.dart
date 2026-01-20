@@ -73,10 +73,13 @@ class FakeEmployeeApi implements EmployeeApiInterface {
 class StubLocalStorage extends EmployeeLocalStorage {
   List<Employee> _employees = [];
   List<SyncOperation> _operations = [];
+  int _nextLocalId = -1;
 
   void setEmployees(List<Employee> employees) {
     _employees = List.from(employees);
   }
+
+  List<Employee> get savedEmployees => List.from(_employees);
 
   @override
   Future<List<Employee>> loadEmployees() async {
@@ -101,6 +104,13 @@ class StubLocalStorage extends EmployeeLocalStorage {
   @override
   Future<void> clearPendingOperations() async {
     _operations.clear();
+  }
+
+  @override
+  Future<int> getNextLocalId() async {
+    final id = _nextLocalId;
+    _nextLocalId--;
+    return id;
   }
 }
 
@@ -162,7 +172,7 @@ void main() {
       fakeApi.setResponse(mockResponse);
 
       await repository.getAllEmployees();
-      expect(stubStorage._employees, hasLength(1));
+      expect(stubStorage.savedEmployees, hasLength(1));
     });
 
     test('falls back to cached data when offline', () async {
@@ -222,13 +232,14 @@ void main() {
       );
 
       expect(result.name, 'Offline Create');
-      expect(result.id, 0);
+      expect(result.id, isNegative);
       expect(offlineStatus.isOffline, isTrue);
 
       final operations = await stubStorage.loadPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.create);
       expect(operations[0].employee!.name, 'Offline Create');
+      expect(operations[0].localId, result.id);
     });
   });
 
@@ -300,7 +311,7 @@ void main() {
 
       await repository.deleteEmployee(1);
 
-      expect(stubStorage._employees, isEmpty);
+      expect(stubStorage.savedEmployees, isEmpty);
     });
 
     test('queues operation when offline', () async {
@@ -337,20 +348,22 @@ void main() {
       await stubStorage.addSyncOperation(
         SyncOperation.create(
           employee: Employee(
-            id: 0,
+            id: -1,
             name: 'Synced',
             salary: '5000',
             age: '30',
             profileImage: '',
           ),
+          localId: -1,
         ),
       );
 
       await repository.syncPendingOperations();
 
-      final operations = await stubStorage.loadPendingOperations();
-      expect(operations, isEmpty);
+      expect(await stubStorage.loadPendingOperations(), isEmpty);
       expect(offlineStatus.isOffline, isFalse);
+      expect(stubStorage.savedEmployees, hasLength(1));
+      expect(stubStorage.savedEmployees[0].id, 10);
     });
 
     test('syncs pending update operations', () async {

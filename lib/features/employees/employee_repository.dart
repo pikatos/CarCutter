@@ -45,14 +45,6 @@ class EmployeeRepository with ChangeNotifier {
     required String salary,
     required String age,
   }) async {
-    final employee = Employee(
-      id: 0,
-      name: name,
-      salary: salary,
-      age: age,
-      profileImage: '',
-    );
-
     try {
       final response = await _api.createEmployee(
         name: name,
@@ -69,8 +61,17 @@ class EmployeeRepository with ChangeNotifier {
     } catch (e) {
       _offlineStatus.setOffline(true);
 
+      final localId = await _localStorage.getNextLocalId();
+      final employee = Employee(
+        id: localId,
+        name: name,
+        salary: salary,
+        age: age,
+        profileImage: '',
+      );
+
       await _localStorage.addSyncOperation(
-        SyncOperation.create(employee: employee),
+        SyncOperation.create(employee: employee, localId: localId),
       );
 
       final cached = await _localStorage.loadEmployees();
@@ -143,11 +144,23 @@ class EmployeeRepository with ChangeNotifier {
       try {
         switch (operation.type) {
           case SyncOperationType.create:
-            await _api.createEmployee(
+            final response = await _api.createEmployee(
               name: operation.employee!.name,
               salary: operation.employee!.salary,
               age: operation.employee!.age,
             );
+            final created = response.data.first;
+
+            if (operation.localId != null) {
+              final cached = await _localStorage.loadEmployees();
+              final index = cached.indexWhere((e) => e.id == operation.localId);
+              if (index != -1) {
+                cached[index] = created;
+              } else {
+                cached.add(created);
+              }
+              await _localStorage.saveEmployees(cached);
+            }
             break;
           case SyncOperationType.update:
             await _api.updateEmployee(operation.employee!);
