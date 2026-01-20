@@ -4,9 +4,14 @@ import 'employee_model.dart';
 
 class EmployeeApi {
   static const String baseUrl = 'https://dummy.restapiexample.com/api/v1';
+  static http.Client? _client;
+
+  static set client(http.Client? client) => _client = client;
 
   static Future<EmployeeResponse> getAllEmployees() async {
-    final response = await http.get(Uri.parse('$baseUrl/employees'));
+    final response = await (_client ?? http.Client()).get(
+      Uri.parse('$baseUrl/employees'),
+    );
     if (response.statusCode == 200) {
       return EmployeeResponse.fromJson(
         jsonDecode(response.body),
@@ -18,7 +23,9 @@ class EmployeeApi {
   }
 
   static Future<EmployeeResponse> getEmployee(int id) async {
-    final response = await http.get(Uri.parse('$baseUrl/employee/$id'));
+    final response = await (_client ?? http.Client()).get(
+      Uri.parse('$baseUrl/employee/$id'),
+    );
     if (response.statusCode == 200) {
       return EmployeeResponse.fromJson(
         jsonDecode(response.body),
@@ -34,7 +41,7 @@ class EmployeeApi {
     required String salary,
     required String age,
   }) async {
-    final response = await http.post(
+    final response = await (_client ?? http.Client()).post(
       Uri.parse('$baseUrl/create'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'name': name, 'salary': salary, 'age': age}),
@@ -55,7 +62,7 @@ class EmployeeApi {
       'salary': employee.salary,
       'age': employee.age,
     });
-    final response = await http.put(
+    final response = await (_client ?? http.Client()).put(
       Uri.parse('$baseUrl/update/${employee.id}'),
       headers: {'Content-Type': 'application/json'},
       body: body,
@@ -73,7 +80,9 @@ class EmployeeApi {
   }
 
   static Future<void> deleteEmployee(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/delete/$id'));
+    final response = await (_client ?? http.Client()).delete(
+      Uri.parse('$baseUrl/delete/$id'),
+    );
     if (response.statusCode != 200) {
       throw Exception('Failed to delete employee');
     }
