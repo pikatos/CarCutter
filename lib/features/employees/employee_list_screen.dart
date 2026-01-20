@@ -5,14 +5,16 @@ import 'employee_details_screen.dart';
 import 'employee_form_screen.dart';
 
 class EmployeeListScreen extends StatefulWidget {
-  const EmployeeListScreen({super.key});
+  final EmployeeRepository? repository;
+
+  const EmployeeListScreen({super.key, this.repository});
 
   @override
   State<EmployeeListScreen> createState() => _EmployeeListScreenState();
 }
 
 class _EmployeeListScreenState extends State<EmployeeListScreen> {
-  final EmployeeRepository _repository = EmployeeRepository();
+  late final EmployeeRepository _repository;
   List<Employee> _employees = [];
   bool _isLoading = false;
   String? _error;
@@ -20,6 +22,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
   @override
   void initState() {
     super.initState();
+    _repository = widget.repository ?? EmployeeRepository();
     _fetchEmployees();
   }
 

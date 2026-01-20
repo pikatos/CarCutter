@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'employee_model.dart';
 import 'employee_form_screen.dart';
+import 'employee_repository.dart';
 
 class EmployeeDetailsScreen extends StatefulWidget {
   final Employee employee;
+  final EmployeeRepository? repository;
 
-  const EmployeeDetailsScreen({super.key, required this.employee});
+  const EmployeeDetailsScreen({
+    super.key,
+    required this.employee,
+    this.repository,
+  });
 
   @override
   State<EmployeeDetailsScreen> createState() => _EmployeeDetailsScreenState();
@@ -14,18 +20,21 @@ class EmployeeDetailsScreen extends StatefulWidget {
 class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
   late Employee _employee;
   bool _hasUpdated = false;
+  late final EmployeeRepository _repository;
 
   @override
   void initState() {
     super.initState();
     _employee = widget.employee;
+    _repository = widget.repository ?? EmployeeRepository();
   }
 
   void _navigateToEdit() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EmployeeFormScreen(employee: _employee),
+        builder: (context) =>
+            EmployeeFormScreen(employee: _employee, repository: _repository),
       ),
     );
     if (result is Employee && mounted) {

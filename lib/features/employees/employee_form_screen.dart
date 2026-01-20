@@ -4,8 +4,9 @@ import 'employee_model.dart';
 
 class EmployeeFormScreen extends StatefulWidget {
   final Employee? employee;
+  final EmployeeRepository? repository;
 
-  const EmployeeFormScreen({super.key, this.employee});
+  const EmployeeFormScreen({super.key, this.employee, this.repository});
 
   @override
   State<EmployeeFormScreen> createState() => _EmployeeFormScreenState();
@@ -16,13 +17,13 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
   final _nameController = TextEditingController();
   final _salaryController = TextEditingController();
   final _ageController = TextEditingController();
-  final EmployeeRepository _repository = EmployeeRepository();
-
+  late final EmployeeRepository _repository;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _repository = widget.repository ?? EmployeeRepository();
     if (widget.employee != null) {
       _nameController.text = widget.employee!.name;
       _salaryController.text = widget.employee!.salary;
