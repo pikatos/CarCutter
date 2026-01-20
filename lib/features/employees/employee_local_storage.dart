@@ -57,9 +57,18 @@ class EmployeeLocalStorage {
     await file.writeAsString(jsonEncode(json));
   }
 
-  Future<List<Employee>> loadEmployees() async {
+  Future<List<Employee>> getAllEmployees() async {
     await _ensureEmployeesLoaded();
     return List<Employee>.from(_employees);
+  }
+
+  Future<Employee?> getEmployee(int id) async {
+    await _ensureEmployeesLoaded();
+    try {
+      return _employees.firstWhere((e) => e.id == id);
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<void> saveEmployees(List<Employee> employees) async {

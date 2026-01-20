@@ -13,7 +13,7 @@ class MockLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
-  Future<List<Employee>> loadEmployees() async {
+  Future<List<Employee>> getAllEmployees() async {
     final employeesJson = _files['employees.json'];
     if (employeesJson == null) return [];
     final json = jsonDecode(employeesJson) as Map<String, dynamic>;
@@ -66,9 +66,9 @@ void main() {
     storage = MockLocalStorage();
   });
 
-  group('EmployeeLocalStorage loadEmployees', () {
+  group('EmployeeLocalStorage getAllEmployees', () {
     test('returns empty list when no data stored', () async {
-      final employees = await storage.loadEmployees();
+      final employees = await storage.getAllEmployees();
       expect(employees, isEmpty);
     });
 
@@ -91,7 +91,7 @@ void main() {
       ];
       await storage.saveEmployees(employees);
 
-      final loaded = await storage.loadEmployees();
+      final loaded = await storage.getAllEmployees();
       expect(loaded, hasLength(2));
       expect(loaded[0].name, 'John');
       expect(loaded[1].name, 'Jane');
@@ -111,7 +111,7 @@ void main() {
       ];
       await storage.saveEmployees(employees);
 
-      final loaded = await storage.loadEmployees();
+      final loaded = await storage.getAllEmployees();
       expect(loaded, hasLength(1));
       expect(loaded[0].name, 'Test');
     });

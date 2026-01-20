@@ -82,7 +82,7 @@ class StubLocalStorage extends EmployeeLocalStorage {
   List<Employee> get savedEmployees => List.from(_employees);
 
   @override
-  Future<List<Employee>> loadEmployees() async {
+  Future<List<Employee>> getAllEmployees() async {
     return List.from(_employees);
   }
 

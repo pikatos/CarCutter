@@ -26,7 +26,7 @@ class EmployeeRepository with ChangeNotifier {
       return employees;
     } catch (e) {
       _offlineStatus.setOffline(true);
-      return await _localStorage.loadEmployees();
+      return await _localStorage.getAllEmployees();
     }
   }
 
@@ -35,8 +35,11 @@ class EmployeeRepository with ChangeNotifier {
       final response = await _api.getEmployee(id);
       return response.data.first;
     } catch (e) {
-      final employees = await _localStorage.loadEmployees();
-      return employees.firstWhere((e) => e.id == id);
+      final employee = await _localStorage.getEmployee(id);
+      if (employee != null) {
+        return employee;
+      }
+      throw Exception('Employee not found');
     }
   }
 
