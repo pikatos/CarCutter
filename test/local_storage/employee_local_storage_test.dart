@@ -30,7 +30,7 @@ class MockLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
-  Future<List<SyncOperation>> loadPendingOperations() async {
+  Future<List<SyncOperation>> getAllPendingOperations() async {
     final opsJson = _files['sync_queue.json'];
     if (opsJson == null) return [];
     final json = jsonDecode(opsJson) as Map<String, dynamic>;
@@ -42,7 +42,7 @@ class MockLocalStorage extends EmployeeLocalStorage {
 
   @override
   Future<void> addSyncOperation(SyncOperation operation) async {
-    final operations = await loadPendingOperations();
+    final operations = await getAllPendingOperations();
     operations.add(operation);
     await savePendingOperations(operations);
   }
@@ -128,7 +128,7 @@ void main() {
       );
       await storage.addSyncOperation(SyncOperation.create(employee: employee));
 
-      final operations = await storage.loadPendingOperations();
+      final operations = await storage.getAllPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.create);
     });
@@ -143,7 +143,7 @@ void main() {
       );
       await storage.addSyncOperation(SyncOperation.update(employee: employee));
 
-      final operations = await storage.loadPendingOperations();
+      final operations = await storage.getAllPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.update);
     });
@@ -161,7 +161,7 @@ void main() {
         ),
       );
 
-      final operations = await storage.loadPendingOperations();
+      final operations = await storage.getAllPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.delete);
       expect(operations[0].employee.id, 42);
@@ -193,7 +193,7 @@ void main() {
 
       await storage.clearPendingOperations();
 
-      final operations = await storage.loadPendingOperations();
+      final operations = await storage.getAllPendingOperations();
       expect(operations, isEmpty);
     });
 
@@ -232,7 +232,7 @@ void main() {
         ),
       );
 
-      final operations = await storage.loadPendingOperations();
+      final operations = await storage.getAllPendingOperations();
       expect(operations, hasLength(3));
       expect(operations[0].type, SyncOperationType.delete);
       expect(operations[1].type, SyncOperationType.create);

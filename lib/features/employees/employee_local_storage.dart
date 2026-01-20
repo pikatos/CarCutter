@@ -194,7 +194,7 @@ class EmployeeLocalStorage {
     await file.writeAsString(jsonEncode(json));
   }
 
-  Future<List<SyncOperation>> loadPendingOperations() async {
+  Future<List<SyncOperation>> getAllPendingOperations() async {
     await _ensureOperationsLoaded();
     return List<SyncOperation>.from(_pendingOperations);
   }

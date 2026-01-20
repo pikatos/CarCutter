@@ -99,7 +99,7 @@ class EmployeeRepository with ChangeNotifier {
   }
 
   Future<void> syncPendingOperations() async {
-    final operations = await _localStorage.loadPendingOperations();
+    final operations = await _localStorage.getAllPendingOperations();
     if (operations.isEmpty) return;
 
     for (final operation in operations) {

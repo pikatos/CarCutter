@@ -153,7 +153,7 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
-  Future<List<SyncOperation>> loadPendingOperations() async {
+  Future<List<SyncOperation>> getAllPendingOperations() async {
     return List.from(_operations);
   }
 
@@ -296,7 +296,7 @@ void main() {
       expect(result.id, isNegative);
       expect(offlineStatus.isOffline, isTrue);
 
-      final operations = await stubStorage.loadPendingOperations();
+      final operations = await stubStorage.getAllPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.create);
       expect(operations[0].employee.name, 'Offline Create');
@@ -348,7 +348,7 @@ void main() {
       expect(result.name, 'Offline Update');
       expect(offlineStatus.isOffline, isTrue);
 
-      final operations = await stubStorage.loadPendingOperations();
+      final operations = await stubStorage.getAllPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.update);
       expect(operations[0].employee.name, 'Offline Update');
@@ -382,7 +382,7 @@ void main() {
 
       expect(offlineStatus.isOffline, isTrue);
 
-      final operations = await stubStorage.loadPendingOperations();
+      final operations = await stubStorage.getAllPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.delete);
       expect(operations[0].employee.id, 42);
@@ -420,7 +420,7 @@ void main() {
 
       await repository.syncPendingOperations();
 
-      expect(await stubStorage.loadPendingOperations(), isEmpty);
+      expect(await stubStorage.getAllPendingOperations(), isEmpty);
       expect(offlineStatus.isOffline, isFalse);
       expect(stubStorage.savedEmployees, hasLength(1));
       expect(stubStorage.savedEmployees[0].id, 10);
@@ -445,7 +445,7 @@ void main() {
 
       await repository.syncPendingOperations();
 
-      final operations = await stubStorage.loadPendingOperations();
+      final operations = await stubStorage.getAllPendingOperations();
       expect(operations, isEmpty);
     });
 
@@ -468,7 +468,7 @@ void main() {
 
       await repository.syncPendingOperations();
 
-      final operations = await stubStorage.loadPendingOperations();
+      final operations = await stubStorage.getAllPendingOperations();
       expect(operations, isEmpty);
     });
 
