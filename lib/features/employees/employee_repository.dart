@@ -13,7 +13,7 @@ class EmployeeRepository with ChangeNotifier {
   }) : _api = api ?? EmployeeApi(),
        _localStorage = localStorage ?? EmployeeLocalStorage();
 
-  Future<List<Employee>> getAllEmployees() async {
+  Future<List<Employee>> fetchEmployees() async {
     try {
       final response = await _api.getAllEmployees();
       final serverEmployees = response.data ?? [];
@@ -22,7 +22,7 @@ class EmployeeRepository with ChangeNotifier {
       await _localStorage.saveEmployees(merged);
       return merged;
     } catch (e) {
-      return await _localStorage.getAllEmployees();
+      return await _localStorage.loadEmployees();
     }
   }
 
@@ -59,7 +59,7 @@ class EmployeeRepository with ChangeNotifier {
       await _localStorage.updateEmployee(employee);
       return employee;
     } catch (e) {
-      final employee = await _localStorage.getEmployee(id);
+      final employee = await _localStorage.loadEmployee(id);
       if (employee != null) {
         return employee;
       }
@@ -88,7 +88,7 @@ class EmployeeRepository with ChangeNotifier {
   }
 
   Future<void> deleteEmployee(int id) async {
-    final employee = await _localStorage.getEmployee(id);
+    final employee = await _localStorage.loadEmployee(id);
     if (employee != null) {
       await _localStorage.deleteEmployeeOffline(id);
     }

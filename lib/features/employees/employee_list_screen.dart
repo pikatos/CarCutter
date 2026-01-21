@@ -33,7 +33,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
 
     try {
       final repository = context.read<EmployeeRepository>();
-      final employees = await repository.getAllEmployees();
+      final employees = await repository.fetchEmployees();
       setState(() {
         _employees = employees;
         _isLoading = false;

@@ -8,34 +8,7 @@ class EmployeeLocalStorage {
   static const String _syncQueueFile = 'sync_queue.json';
   static const String _localIdCounterFile = 'local_id_counter.json';
 
-  int _localIdCounter = -1;
-  bool _localIdCounterLoaded = false;
-
-  List<Employee> _employees = [];
-  bool _employeesLoaded = false;
-
-  List<SyncOperation> _pendingOperations = [];
-  bool _operationsLoaded = false;
-
-  Future<void> _ensureLocalIdCounterLoaded() async {
-    if (_localIdCounterLoaded) return;
-    _localIdCounter = await _loadLocalIdCounterFromFile();
-    _localIdCounterLoaded = true;
-  }
-
-  Future<void> _ensureEmployeesLoaded() async {
-    if (_employeesLoaded) return;
-    _employees = await _loadEmployeesFromFile();
-    _employeesLoaded = true;
-  }
-
-  Future<void> _ensureOperationsLoaded() async {
-    if (_operationsLoaded) return;
-    _pendingOperations = await _loadOperationsFromFile();
-    _operationsLoaded = true;
-  }
-
-  Future<List<Employee>> _loadEmployeesFromFile() async {
+  Future<List<Employee>> loadEmployees() async {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/$_employeesFile');
 
@@ -55,39 +28,28 @@ class EmployeeLocalStorage {
     }
   }
 
-  Future<void> _saveEmployeesToFile() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$_employeesFile');
-
-    final json = {'data': _employees.map((e) => e.toJson()).toList()};
-
-    await file.writeAsString(jsonEncode(json));
-  }
-
-  Future<List<Employee>> getAllEmployees() async {
-    await _ensureEmployeesLoaded();
-    return List<Employee>.from(_employees);
-  }
-
-  Future<Employee?> getEmployee(int id) async {
-    await _ensureEmployeesLoaded();
+  Future<Employee?> loadEmployee(int id) async {
+    final employees = await loadEmployees();
     try {
-      return _employees.firstWhere((e) => e.id == id);
+      return employees.firstWhere((e) => e.id == id);
     } catch (e) {
       return null;
     }
   }
 
   Future<void> saveEmployees(List<Employee> employees) async {
-    await _ensureEmployeesLoaded();
-    _employees = List<Employee>.from(employees);
-    await _saveEmployeesToFile();
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/$_employeesFile');
+
+    final json = {'data': employees.map((e) => e.toJson()).toList()};
+
+    await file.writeAsString(jsonEncode(json));
   }
 
   Future<void> addEmployee(Employee employee) async {
-    await _ensureEmployeesLoaded();
-    _employees.add(employee);
-    await _saveEmployeesToFile();
+    final employees = await loadEmployees();
+    employees.add(employee);
+    await saveEmployees(employees);
   }
 
   Future<Employee> addEmployeeOffline({
@@ -112,11 +74,11 @@ class EmployeeLocalStorage {
   }
 
   Future<void> updateEmployee(Employee employee) async {
-    await _ensureEmployeesLoaded();
-    final index = _employees.indexWhere((e) => e.id == employee.id);
+    final employees = await loadEmployees();
+    final index = employees.indexWhere((e) => e.id == employee.id);
     if (index != -1) {
-      _employees[index] = employee;
-      await _saveEmployeesToFile();
+      employees[index] = employee;
+      await saveEmployees(employees);
     }
   }
 
@@ -126,13 +88,13 @@ class EmployeeLocalStorage {
   }
 
   Future<void> deleteEmployee(int id) async {
-    await _ensureEmployeesLoaded();
-    _employees.removeWhere((e) => e.id == id);
-    await _saveEmployeesToFile();
+    final employees = await loadEmployees();
+    employees.removeWhere((e) => e.id == id);
+    await saveEmployees(employees);
   }
 
   Future<void> deleteEmployeeOffline(int id) async {
-    final employee = await getEmployee(id);
+    final employee = await loadEmployee(id);
     if (employee != null) {
       await addSyncOperation(SyncOperation.delete(employee: employee));
     }
@@ -140,14 +102,12 @@ class EmployeeLocalStorage {
   }
 
   Future<int> getNextLocalId() async {
-    await _ensureLocalIdCounterLoaded();
-    final id = _localIdCounter;
-    _localIdCounter--;
-    await _saveLocalIdCounter();
+    final id = await _loadLocalIdCounter();
+    await _saveLocalIdCounter(id - 1);
     return id;
   }
 
-  Future<int> _loadLocalIdCounterFromFile() async {
+  Future<int> _loadLocalIdCounter() async {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/$_localIdCounterFile');
 
@@ -163,15 +123,15 @@ class EmployeeLocalStorage {
     return -1;
   }
 
-  Future<void> _saveLocalIdCounter() async {
+  Future<void> _saveLocalIdCounter(int counter) async {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/$_localIdCounterFile');
 
-    final json = {'counter': _localIdCounter};
+    final json = {'counter': counter};
     await file.writeAsString(jsonEncode(json));
   }
 
-  Future<List<SyncOperation>> _loadOperationsFromFile() async {
+  Future<List<SyncOperation>> getAllPendingOperations() async {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/$_syncQueueFile');
 
@@ -191,35 +151,18 @@ class EmployeeLocalStorage {
     }
   }
 
-  Future<void> _saveOperationsToFile() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$_syncQueueFile');
-
-    final json = {
-      'operations': _pendingOperations.map((e) => e.toJson()).toList(),
-    };
-
-    await file.writeAsString(jsonEncode(json));
-  }
-
-  Future<List<SyncOperation>> getAllPendingOperations() async {
-    await _ensureOperationsLoaded();
-    return List<SyncOperation>.from(_pendingOperations);
-  }
-
   Future<void> addSyncOperation(SyncOperation operation) async {
-    await _ensureOperationsLoaded();
-    _pendingOperations.add(operation);
-    await _saveOperationsToFile();
+    final operations = await getAllPendingOperations();
+    operations.add(operation);
+    await savePendingOperations(operations);
   }
 
   Future<void> savePendingOperations(List<SyncOperation> operations) async {
-    await _ensureOperationsLoaded();
-    _pendingOperations = List<SyncOperation>.from(operations);
-    if (_pendingOperations.isEmpty) {
-      _localIdCounter = -1;
-      await _saveLocalIdCounter();
-    }
-    await _saveOperationsToFile();
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/$_syncQueueFile');
+
+    final json = {'operations': operations.map((e) => e.toJson()).toList()};
+
+    await file.writeAsString(jsonEncode(json));
   }
 }

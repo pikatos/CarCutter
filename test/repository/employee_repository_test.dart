@@ -84,7 +84,7 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
-  Future<List<Employee>> getAllEmployees() async {
+  Future<List<Employee>> loadEmployees() async {
     return List.from(_employees);
   }
 
@@ -99,7 +99,7 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
-  Future<Employee?> getEmployee(int id) async {
+  Future<Employee?> loadEmployee(int id) async {
     try {
       return _employees.firstWhere((e) => e.id == id);
     } catch (e) {
@@ -155,7 +155,7 @@ class StubLocalStorage extends EmployeeLocalStorage {
 
   @override
   Future<void> deleteEmployeeOffline(int id) async {
-    final employee = await getEmployee(id);
+    final employee = await loadEmployee(id);
     if (employee != null) {
       _operations.add(SyncOperation.delete(employee: employee));
     }
@@ -218,7 +218,7 @@ void main() {
       );
       fakeApi.setResponse(mockResponse);
 
-      final result = await repository.getAllEmployees();
+      final result = await repository.fetchEmployees();
 
       expect(result, hasLength(1));
       expect(result[0].name, 'John');
@@ -230,7 +230,7 @@ void main() {
         EmployeeResponse(status: 'success', data: [], message: 'OK'),
       );
 
-      final result = await repository.getAllEmployees();
+      final result = await repository.fetchEmployees();
 
       expect(result, isEmpty);
     });

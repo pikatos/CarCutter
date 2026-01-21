@@ -76,7 +76,7 @@ class StubLocalStorage extends EmployeeLocalStorage {
   List<Employee> get savedEmployees => List.from(_employees);
 
   @override
-  Future<List<Employee>> getAllEmployees() async {
+  Future<List<Employee>> loadEmployees() async {
     return List.from(_employees);
   }
 
@@ -111,7 +111,7 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
-  Future<Employee?> getEmployee(int id) async {
+  Future<Employee?> loadEmployee(int id) async {
     try {
       return _employees.firstWhere((e) => e.id == id);
     } catch (e) {
@@ -212,7 +212,7 @@ void main() {
       );
       fakeApi.setResponse(mockResponse);
 
-      final employees = await repository.getAllEmployees();
+      final employees = await repository.fetchEmployees();
 
       expect(employees, hasLength(1));
       expect(employees[0].name, 'John');
@@ -234,7 +234,7 @@ void main() {
       );
       fakeApi.setResponse(mockResponse);
 
-      await repository.getAllEmployees();
+      await repository.fetchEmployees();
       expect(stubStorage.savedEmployees, hasLength(1));
     });
 
@@ -250,7 +250,7 @@ void main() {
       ]);
       fakeApi.setException(Exception('Network Error'));
 
-      final employees = await repository.getAllEmployees();
+      final employees = await repository.fetchEmployees();
 
       expect(employees, hasLength(1));
       expect(employees[0].name, 'Offline');
@@ -460,7 +460,7 @@ void main() {
         ),
       );
 
-      final employees = await repository.getAllEmployees();
+      final employees = await repository.fetchEmployees();
 
       expect(employees, hasLength(2));
       expect(employees[0].name, 'Server Employee');
@@ -497,7 +497,7 @@ void main() {
         ),
       );
 
-      final employees = await repository.getAllEmployees();
+      final employees = await repository.fetchEmployees();
 
       expect(employees, hasLength(1));
       expect(employees[0].name, 'Updated');
@@ -540,7 +540,7 @@ void main() {
         ),
       );
 
-      final employees = await repository.getAllEmployees();
+      final employees = await repository.fetchEmployees();
 
       expect(employees, hasLength(1));
       expect(employees[0].name, 'To Keep');
