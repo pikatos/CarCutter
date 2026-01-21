@@ -18,38 +18,15 @@ class EmployeeRepository with ChangeNotifier {
       final response = await _api.getAllEmployees();
       final serverEmployees = response.data ?? [];
       final operations = await _localStorage.getAllPendingOperations();
-      final merged = _mergeEmployees(serverEmployees, operations);
+      final merged = _localStorage.mergeWithPendingOperations(
+        serverEmployees,
+        operations,
+      );
       await _localStorage.saveEmployees(merged);
       return merged;
     } catch (e) {
       return await _localStorage.loadEmployees();
     }
-  }
-
-  List<Employee> _mergeEmployees(
-    List<Employee> serverEmployees,
-    List<SyncOperation> operations,
-  ) {
-    final result = List<Employee>.from(serverEmployees);
-
-    for (final op in operations) {
-      switch (op.type) {
-        case SyncOperationType.create:
-          result.add(op.employee);
-          break;
-        case SyncOperationType.update:
-          final index = result.indexWhere((e) => e.id == op.employee.id);
-          if (index != -1) {
-            result[index] = op.employee;
-          }
-          break;
-        case SyncOperationType.delete:
-          result.removeWhere((e) => e.id == op.employee.id);
-          break;
-      }
-    }
-
-    return result;
   }
 
   Future<Employee> getEmployee(int id) async {

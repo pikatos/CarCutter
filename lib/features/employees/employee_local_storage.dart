@@ -165,4 +165,30 @@ class EmployeeLocalStorage {
 
     await file.writeAsString(jsonEncode(json));
   }
+
+  List<Employee> mergeWithPendingOperations(
+    List<Employee> serverEmployees,
+    List<SyncOperation> operations,
+  ) {
+    final result = List<Employee>.from(serverEmployees);
+
+    for (final op in operations) {
+      switch (op.type) {
+        case SyncOperationType.create:
+          result.add(op.employee);
+          break;
+        case SyncOperationType.update:
+          final index = result.indexWhere((e) => e.id == op.employee.id);
+          if (index != -1) {
+            result[index] = op.employee;
+          }
+          break;
+        case SyncOperationType.delete:
+          result.removeWhere((e) => e.id == op.employee.id);
+          break;
+      }
+    }
+
+    return result;
+  }
 }
