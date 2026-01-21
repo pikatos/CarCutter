@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:carcutter/common/invalid_http_response.dart';
 import 'employee_model.dart';
 
 abstract class EmployeeApiInterface {
@@ -33,7 +34,7 @@ class EmployeeApi implements EmployeeApiInterface {
       }
       return employeeResponse;
     } else {
-      throw Exception('Failed to load employees');
+      throw InvalidHttpResponse(response);
     }
   }
 
@@ -50,7 +51,7 @@ class EmployeeApi implements EmployeeApiInterface {
       }
       return employeeResponse;
     } else {
-      throw Exception('Failed to load employee');
+      throw InvalidHttpResponse(response);
     }
   }
 
@@ -75,7 +76,7 @@ class EmployeeApi implements EmployeeApiInterface {
       }
       return employeeResponse;
     } else {
-      throw Exception('Failed to create employee');
+      throw InvalidHttpResponse(response);
     }
   }
 
@@ -106,7 +107,7 @@ class EmployeeApi implements EmployeeApiInterface {
       }
       return employeeResponse;
     } else {
-      throw Exception('Failed to update employee');
+      throw InvalidHttpResponse(response);
     }
   }
 
@@ -123,7 +124,7 @@ class EmployeeApi implements EmployeeApiInterface {
       }
       return employeeResponse;
     } else {
-      throw Exception('Failed to delete employee');
+      throw InvalidHttpResponse(response);
     }
   }
 }
