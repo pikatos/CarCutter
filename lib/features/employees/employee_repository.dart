@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:carcutter/common/invalid_http_response.dart';
 import 'employee_api.dart';
+import 'employee_api_invalid_response.dart';
 import 'employee_local_storage.dart';
 import 'employee_model.dart';
 
@@ -92,6 +94,10 @@ class EmployeeRepository with ChangeNotifier {
             await _api.deleteEmployee(operation.employee.id);
             break;
         }
+      } on InvalidHttpResponse catch (e) {
+        failedOperations.add(operation);
+      } on EmployeeApiInvalidResponse catch (e) {
+        failedOperations.add(operation);
       } catch (e) {
         failedOperations.add(operation);
       }
