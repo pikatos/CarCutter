@@ -164,6 +164,10 @@ class EmployeeLocalStorage {
     final json = {'operations': operations.map((e) => e.toJson()).toList()};
 
     await file.writeAsString(jsonEncode(json));
+
+    if (operations.isEmpty) {
+      await _saveLocalIdCounter(-1);
+    }
   }
 
   Future<List<Employee>> mergeWithPendingOperations(
