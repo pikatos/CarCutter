@@ -115,7 +115,7 @@ void main() {
       };
       final response = EmployeeResponse.fromJson(json, Employee.fromListJson);
       expect(response.data, hasLength(1));
-      expect(response.data[0].name, 'John');
+      expect(response.data![0].name, 'John');
     });
 
     test('parses list of items', () {
@@ -141,8 +141,8 @@ void main() {
       };
       final response = EmployeeResponse.fromJson(json, Employee.fromListJson);
       expect(response.data, hasLength(2));
-      expect(response.data[0].name, 'John');
-      expect(response.data[1].name, 'Jane');
+      expect(response.data![0].name, 'John');
+      expect(response.data![1].name, 'Jane');
     });
 
     test('parses create response with fromJson decoder', () {
@@ -158,8 +158,8 @@ void main() {
       };
       final response = EmployeeResponse.fromJson(json, Employee.fromJson);
       expect(response.data, hasLength(1));
-      expect(response.data[0].name, 'New Employee');
-      expect(response.data[0].salary, '4000');
+      expect(response.data![0].name, 'New Employee');
+      expect(response.data![0].salary, '4000');
     });
   });
 }

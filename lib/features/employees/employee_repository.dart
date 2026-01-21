@@ -16,7 +16,7 @@ class EmployeeRepository with ChangeNotifier {
   Future<List<Employee>> getAllEmployees() async {
     try {
       final response = await _api.getAllEmployees();
-      final serverEmployees = response.data;
+      final serverEmployees = response.data ?? [];
       final operations = await _localStorage.getAllPendingOperations();
       final merged = _mergeEmployees(serverEmployees, operations);
       await _localStorage.saveEmployees(merged);
@@ -55,7 +55,7 @@ class EmployeeRepository with ChangeNotifier {
   Future<Employee> getEmployee(int id) async {
     try {
       final response = await _api.getEmployee(id);
-      final employee = response.data.first;
+      final employee = response.data!.first;
       await _localStorage.updateEmployee(employee);
       return employee;
     } catch (e) {
@@ -110,7 +110,7 @@ class EmployeeRepository with ChangeNotifier {
               salary: operation.employee.salary,
               age: operation.employee.age,
             );
-            final created = response.data.first;
+            final created = response.data!.first;
 
             await _localStorage.updateEmployee(created);
             break;

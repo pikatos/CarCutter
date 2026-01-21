@@ -66,10 +66,11 @@ class StubEmployeeApi implements EmployeeApiInterface {
   }
 
   @override
-  Future<void> deleteEmployee(int id) async {
+  Future<EmployeeResponse> deleteEmployee(int id) async {
     _fake._lastMethod = 'deleteEmployee';
     _fake._lastArgs = {'id': id};
     if (_fake._nextException != null) throw _fake._nextException!;
+    return _fake._nextResponse!;
   }
 }
 

@@ -11,7 +11,7 @@ abstract class EmployeeApiInterface {
     required String age,
   });
   Future<EmployeeResponse> updateEmployee(Employee employee);
-  Future<void> deleteEmployee(int id);
+  Future<EmployeeResponse> deleteEmployee(int id);
 }
 
 class EmployeeApi implements EmployeeApiInterface {
@@ -24,10 +24,14 @@ class EmployeeApi implements EmployeeApiInterface {
   Future<EmployeeResponse> getAllEmployees() async {
     final response = await _client.get(Uri.parse('$baseUrl/employees'));
     if (response.statusCode == 200) {
-      return EmployeeResponse.fromJson(
+      final employeeResponse = EmployeeResponse.fromJson(
         jsonDecode(response.body),
         Employee.fromListJson,
       );
+      if (employeeResponse.status != 'success') {
+        throw Exception(employeeResponse.message);
+      }
+      return employeeResponse;
     } else {
       throw Exception('Failed to load employees');
     }
@@ -37,10 +41,14 @@ class EmployeeApi implements EmployeeApiInterface {
   Future<EmployeeResponse> getEmployee(int id) async {
     final response = await _client.get(Uri.parse('$baseUrl/employee/$id'));
     if (response.statusCode == 200) {
-      return EmployeeResponse.fromJson(
+      final employeeResponse = EmployeeResponse.fromJson(
         jsonDecode(response.body),
         Employee.fromListJson,
       );
+      if (employeeResponse.status != 'success') {
+        throw Exception(employeeResponse.message);
+      }
+      return employeeResponse;
     } else {
       throw Exception('Failed to load employee');
     }
@@ -58,10 +66,14 @@ class EmployeeApi implements EmployeeApiInterface {
       body: jsonEncode({'name': name, 'salary': salary, 'age': age}),
     );
     if (response.statusCode == 200) {
-      return EmployeeResponse.fromJson(
+      final employeeResponse = EmployeeResponse.fromJson(
         jsonDecode(response.body),
         Employee.fromJson,
       );
+      if (employeeResponse.status != 'success') {
+        throw Exception(employeeResponse.message);
+      }
+      return employeeResponse;
     } else {
       throw Exception('Failed to create employee');
     }
@@ -85,16 +97,32 @@ class EmployeeApi implements EmployeeApiInterface {
         employee.id; // API doesn't return ID, inject from request
 
     if (response.statusCode == 200) {
-      return EmployeeResponse.fromJson(json, Employee.fromJson);
+      final employeeResponse = EmployeeResponse.fromJson(
+        json,
+        Employee.fromJson,
+      );
+      if (employeeResponse.status != 'success') {
+        throw Exception(employeeResponse.message);
+      }
+      return employeeResponse;
     } else {
       throw Exception('Failed to update employee');
     }
   }
 
   @override
-  Future<void> deleteEmployee(int id) async {
+  Future<EmployeeResponse> deleteEmployee(int id) async {
     final response = await _client.delete(Uri.parse('$baseUrl/delete/$id'));
-    if (response.statusCode != 200) {
+    if (response.statusCode == 200) {
+      final employeeResponse = EmployeeResponse.fromJson(
+        jsonDecode(response.body),
+        Employee.fromListJson,
+      );
+      if (employeeResponse.status != 'success') {
+        throw Exception(employeeResponse.message);
+      }
+      return employeeResponse;
+    } else {
       throw Exception('Failed to delete employee');
     }
   }

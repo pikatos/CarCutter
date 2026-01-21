@@ -56,23 +56,21 @@ class Employee {
 
 class EmployeeResponse {
   final String status;
-  final List<Employee> data;
+  final List<Employee>? data;
   final String message;
 
-  EmployeeResponse({
-    required this.status,
-    required this.data,
-    required this.message,
-  });
+  EmployeeResponse({required this.status, this.data, required this.message});
 
   factory EmployeeResponse.fromJson(
     Map<String, dynamic> json,
     Employee Function(Map<String, dynamic>) decodeEmployee,
   ) {
     final data = json['data'];
-    final employees = (data is List ? data : [data])
-        .map((e) => decodeEmployee(e as Map<String, dynamic>))
-        .toList();
+    final employees = data != null && data is List
+        ? data.map((e) => decodeEmployee(e as Map<String, dynamic>)).toList()
+        : data != null && data is Map<String, dynamic>
+        ? [decodeEmployee(data)]
+        : <Employee>[];
 
     return EmployeeResponse(
       status: json['status'] as String,

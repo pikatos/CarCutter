@@ -111,8 +111,8 @@ void main() {
 
       expect(response.status, 'success');
       expect(response.data, hasLength(2));
-      expect(response.data[0].name, 'John');
-      expect(response.data[1].name, 'Jane');
+      expect(response.data![0].name, 'John');
+      expect(response.data![1].name, 'Jane');
       expect(fakeClient.lastMethod, 'GET');
     });
 
@@ -158,8 +158,8 @@ void main() {
       final response = await api.getEmployee(1);
 
       expect(response.data, hasLength(1));
-      expect(response.data[0].id, 1);
-      expect(response.data[0].name, 'John');
+      expect(response.data![0].id, 1);
+      expect(response.data![0].name, 'John');
     });
 
     test('throws exception on 404', () async {
@@ -192,8 +192,8 @@ void main() {
       );
 
       expect(response.data, hasLength(1));
-      expect(response.data[0].name, 'New Employee');
-      expect(response.data[0].salary, '4000');
+      expect(response.data![0].name, 'New Employee');
+      expect(response.data![0].salary, '4000');
       expect(fakeClient.lastMethod, 'POST');
     });
 
@@ -232,8 +232,8 @@ void main() {
       final response = await api.updateEmployee(employee);
 
       expect(response.data, hasLength(1));
-      expect(response.data[0].id, 42);
-      expect(response.data[0].name, 'Updated');
+      expect(response.data![0].id, 42);
+      expect(response.data![0].name, 'Updated');
       expect(fakeClient.lastMethod, 'PUT');
     });
 
@@ -253,7 +253,10 @@ void main() {
 
   group('EmployeeApi.deleteEmployee', () {
     test('succeeds on 200', () async {
-      fakeClient.setResponse('{}', 200);
+      fakeClient.setResponse(
+        '{"status":"success","data":null,"message":"Successfully!"}',
+        200,
+      );
 
       await expectLater(api.deleteEmployee(1), completes);
       expect(fakeClient.lastMethod, 'DELETE');

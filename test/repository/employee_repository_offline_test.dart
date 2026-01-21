@@ -57,9 +57,10 @@ class FakeEmployeeApi implements EmployeeApiInterface {
   }
 
   @override
-  Future<void> deleteEmployee(int id) async {
+  Future<EmployeeResponse> deleteEmployee(int id) async {
     _onCall?.call();
     if (_nextException != null) throw _nextException!;
+    return _nextResponse!;
   }
 }
 

@@ -65,9 +65,10 @@ class StubEmployeeApi implements EmployeeApiInterface {
   }
 
   @override
-  Future<void> deleteEmployee(int id) async {
+  Future<EmployeeResponse> deleteEmployee(int id) async {
     if (_exception != null) throw _exception!;
     _employees.removeWhere((e) => e.id == id);
+    return EmployeeResponse(status: 'success', data: null, message: 'OK');
   }
 }
 
