@@ -13,89 +13,23 @@ class EmployeeListScreen extends StatefulWidget {
 }
 
 class _EmployeeListScreenState extends State<EmployeeListScreen> {
-  List<Employee> _employees = [];
-  bool _isLoading = false;
-  String? _error;
+  Future<List<Employee>>? _employeesFuture;
 
   @override
   void initState() {
     super.initState();
-    _fetchEmployees();
+    _employeesFuture = _fetchEmployees();
   }
 
-  Future<void> _fetchEmployees() async {
-    if (_isLoading) return;
+  Future<List<Employee>> _fetchEmployees() {
+    final repository = context.read<EmployeeRepository>();
+    return repository.fetchEmployees();
+  }
 
+  void _refresh() {
     setState(() {
-      _isLoading = true;
-      _error = null;
+      _employeesFuture = _fetchEmployees();
     });
-
-    try {
-      final repository = context.read<EmployeeRepository>();
-      final employees = await repository.fetchEmployees();
-      setState(() {
-        _employees = employees;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _deleteEmployee(int id) async {
-    try {
-      final repository = context.read<EmployeeRepository>();
-      await repository.deleteEmployee(id);
-      setState(() {
-        _employees.removeWhere((e) => e.id == id);
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Employee deleted successfully')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
-      }
-    }
-  }
-
-  void _navigateToDetails(Employee employee) async {
-    final result = await Navigator.push<Employee>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EmployeeDetailsScreen(employee: employee),
-      ),
-    );
-    if (result != null) {
-      setState(() {
-        final index = _employees.indexWhere((e) => e.id == result.id);
-        if (index != -1) {
-          _employees[index] = result;
-        }
-      });
-    }
-  }
-
-  void _navigateToCreate() async {
-    final result = await Navigator.push<Employee>(
-      context,
-      MaterialPageRoute(builder: (context) => const EmployeeFormScreen()),
-    );
-    if (result != null) {
-      setState(() {
-        _employees.add(result);
-      });
-    } else {
-      _fetchEmployees();
-    }
   }
 
   @override
@@ -104,10 +38,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
       appBar: AppBar(
         title: const Text('Employees'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchEmployees,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _refresh),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -119,43 +50,47 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
   }
 
   Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return FutureBuilder<List<Employee>>(
+      future: _employeesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Error: $_error', textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchEmployees,
-              child: const Text('Retry'),
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Error: ${snapshot.error}'),
+                const SizedBox(height: 16),
+                ElevatedButton(onPressed: _refresh, child: const Text('Retry')),
+              ],
             ),
-          ],
-        ),
-      );
-    }
+          );
+        }
 
-    if (_employees.isEmpty) {
-      return const Center(child: Text('No employees found'));
-    }
+        final employees = snapshot.data ?? [];
 
-    return ListView.builder(
-      itemCount: _employees.length,
-      itemBuilder: (context, index) {
-        final employee = _employees[index];
-        return ListTile(
-          leading: CircleAvatar(child: Text(employee.name[0])),
-          title: Text(employee.name),
-          subtitle: Text('Age: ${employee.age}'),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: () => _showDeleteDialog(employee),
-          ),
-          onTap: () => _navigateToDetails(employee),
+        if (employees.isEmpty) {
+          return const Center(child: Text('No employees found'));
+        }
+
+        return ListView.builder(
+          itemCount: employees.length,
+          itemBuilder: (context, index) {
+            final employee = employees[index];
+            return ListTile(
+              leading: CircleAvatar(child: Text(employee.name[0])),
+              title: Text(employee.name),
+              subtitle: Text('Age: ${employee.age}'),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _showDeleteDialog(employee),
+              ),
+              onTap: () => _navigateToDetails(employee),
+            );
+          },
         );
       },
     );
@@ -182,5 +117,46 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _deleteEmployee(int id) async {
+    try {
+      final repository = context.read<EmployeeRepository>();
+      await repository.deleteEmployee(id);
+      _refresh();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Employee deleted successfully')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+      }
+    }
+  }
+
+  void _navigateToDetails(Employee employee) async {
+    final result = await Navigator.push<Employee>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EmployeeDetailsScreen(employee: employee),
+      ),
+    );
+    if (result != null) {
+      _refresh();
+    }
+  }
+
+  void _navigateToCreate() async {
+    final result = await Navigator.push<Employee>(
+      context,
+      MaterialPageRoute(builder: (context) => const EmployeeFormScreen()),
+    );
+    if (result != null) {
+      _refresh();
+    }
   }
 }

@@ -99,6 +99,7 @@ class EmployeeRepository with ChangeNotifier {
             content.pendingOperations.removeAt(0);
             return content.pendingOperations.firstOrNull;
           });
+          notifyListeners();
           break;
         case SyncOperationType.update:
           final response = await _api.updateEmployee(operation.employee);
@@ -115,6 +116,7 @@ class EmployeeRepository with ChangeNotifier {
             content.pendingOperations.removeAt(0);
             return content.pendingOperations.firstOrNull;
           });
+          notifyListeners();
           break;
         case SyncOperationType.delete:
           await _api.deleteEmployee(operation.employee.id);
@@ -124,6 +126,7 @@ class EmployeeRepository with ChangeNotifier {
             content.pendingOperations.removeAt(0);
             return content.pendingOperations.firstOrNull;
           });
+          notifyListeners();
           break;
       }
     } on InvalidHttpResponse catch (_) {
