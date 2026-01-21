@@ -189,6 +189,7 @@ class EmployeeLocalStorage {
       }
     }
 
+    await saveEmployees(result);
     return result;
   }
 }
