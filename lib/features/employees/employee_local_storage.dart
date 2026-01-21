@@ -131,7 +131,7 @@ class EmployeeLocalStorage {
     await file.writeAsString(jsonEncode(json));
   }
 
-  Future<List<SyncOperation>> getAllPendingOperations() async {
+  Future<List<SyncOperation>> loadPendingOperations() async {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/$_syncQueueFile');
 
@@ -152,7 +152,7 @@ class EmployeeLocalStorage {
   }
 
   Future<void> addSyncOperation(SyncOperation operation) async {
-    final operations = await getAllPendingOperations();
+    final operations = await loadPendingOperations();
     operations.add(operation);
     await savePendingOperations(operations);
   }
@@ -169,7 +169,7 @@ class EmployeeLocalStorage {
   Future<List<Employee>> mergeWithPendingOperations(
     List<Employee> serverEmployees,
   ) async {
-    final operations = await getAllPendingOperations();
+    final operations = await loadPendingOperations();
     final result = List<Employee>.from(serverEmployees);
 
     for (final op in operations) {

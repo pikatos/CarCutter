@@ -67,7 +67,7 @@ class EmployeeRepository with ChangeNotifier {
   }
 
   Future<void> syncPendingOperations() async {
-    final operations = await _localStorage.getAllPendingOperations();
+    final operations = await _localStorage.loadPendingOperations();
     if (operations.isEmpty) return;
 
     final failedOperations = <SyncOperation>[];

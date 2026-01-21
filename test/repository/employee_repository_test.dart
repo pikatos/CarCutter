@@ -163,7 +163,7 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
-  Future<List<SyncOperation>> getAllPendingOperations() async {
+  Future<List<SyncOperation>> loadPendingOperations() async {
     return List.from(_operations);
   }
 
@@ -273,7 +273,7 @@ void main() {
       expect(result.id, isNegative);
       expect(fakeApi.lastArgs!['name'], 'New Employee');
 
-      final operations = await stubStorage.getAllPendingOperations();
+      final operations = await stubStorage.loadPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.create);
     });

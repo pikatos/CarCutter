@@ -169,7 +169,7 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
-  Future<List<SyncOperation>> getAllPendingOperations() async {
+  Future<List<SyncOperation>> loadPendingOperations() async {
     return List<SyncOperation>.from(_operations);
   }
 
@@ -268,7 +268,7 @@ void main() {
       expect(result.name, 'New');
       expect(result.id, isNegative);
 
-      final operations = await stubStorage.getAllPendingOperations();
+      final operations = await stubStorage.loadPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.create);
       expect(operations[0].employee.name, 'New');
@@ -288,7 +288,7 @@ void main() {
 
       expect(result.name, 'Updated');
 
-      final operations = await stubStorage.getAllPendingOperations();
+      final operations = await stubStorage.loadPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.update);
       expect(operations[0].employee.name, 'Updated');
@@ -308,7 +308,7 @@ void main() {
       ]);
 
       await stubStorage.deleteEmployeeOffline(1);
-      final operations = await stubStorage.getAllPendingOperations();
+      final operations = await stubStorage.loadPendingOperations();
       expect(operations, hasLength(1));
       expect(operations[0].type, SyncOperationType.delete);
       expect(operations[0].employee.id, 1);
@@ -317,7 +317,7 @@ void main() {
     test('does not queue operation for non-existent employee', () async {
       await repository.deleteEmployee(42);
 
-      final operations = await stubStorage.getAllPendingOperations();
+      final operations = await stubStorage.loadPendingOperations();
       expect(operations, isEmpty);
     });
   });
@@ -353,7 +353,7 @@ void main() {
 
       await repository.syncPendingOperations();
 
-      expect(await stubStorage.getAllPendingOperations(), isEmpty);
+      expect(await stubStorage.loadPendingOperations(), isEmpty);
       expect(stubStorage.savedEmployees, hasLength(1));
       expect(stubStorage.savedEmployees[0].id, 10);
     });
@@ -377,7 +377,7 @@ void main() {
 
       await repository.syncPendingOperations();
 
-      final operations = await stubStorage.getAllPendingOperations();
+      final operations = await stubStorage.loadPendingOperations();
       expect(operations, isEmpty);
     });
 
@@ -400,7 +400,7 @@ void main() {
 
       await repository.syncPendingOperations();
 
-      final operations = await stubStorage.getAllPendingOperations();
+      final operations = await stubStorage.loadPendingOperations();
       expect(operations, isEmpty);
     });
 
@@ -425,7 +425,7 @@ void main() {
       );
       await repository.syncPendingOperations();
 
-      final operations = await stubStorage.getAllPendingOperations();
+      final operations = await stubStorage.loadPendingOperations();
       expect(operations, isEmpty);
     });
   });
