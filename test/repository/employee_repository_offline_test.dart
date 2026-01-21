@@ -260,7 +260,22 @@ void main() {
   });
 
   group('EmployeeRepository createEmployee', () {
-    test('creates employee and queues operation', () async {
+    test('creates employee and syncs operation', () async {
+      final createdEmployee = Employee(
+        id: 10,
+        name: 'New',
+        salary: '3000',
+        age: '25',
+        profileImage: '',
+      );
+      fakeApi.setResponse(
+        EmployeeResponse(
+          status: 'success',
+          data: [createdEmployee],
+          message: 'OK',
+        ),
+      );
+
       final result = await repository.createEmployee(
         name: 'New',
         salary: '3000',
@@ -271,14 +286,14 @@ void main() {
       expect(result.id, isNegative);
 
       final operations = await stubStorage.loadPendingOperations();
-      expect(operations, hasLength(1));
-      expect(operations[0].type, SyncOperationType.create);
-      expect(operations[0].employee.name, 'New');
+      expect(operations, isEmpty);
+      expect(stubStorage.savedEmployees, hasLength(1));
+      expect(stubStorage.savedEmployees[0].id, 10);
     });
   });
 
   group('EmployeeRepository updateEmployee', () {
-    test('updates employee and queues operation', () async {
+    test('updates employee and syncs operation', () async {
       final employee = Employee(
         id: 1,
         name: 'Updated',
@@ -286,14 +301,29 @@ void main() {
         age: '35',
         profileImage: '',
       );
+      final updatedEmployee = Employee(
+        id: 1,
+        name: 'Updated',
+        salary: '7000',
+        age: '35',
+        profileImage: '',
+      );
+      fakeApi.setResponse(
+        EmployeeResponse(
+          status: 'success',
+          data: [updatedEmployee],
+          message: 'OK',
+        ),
+      );
+
       final result = await repository.updateEmployee(employee);
 
       expect(result.name, 'Updated');
 
       final operations = await stubStorage.loadPendingOperations();
-      expect(operations, hasLength(1));
-      expect(operations[0].type, SyncOperationType.update);
-      expect(operations[0].employee.name, 'Updated');
+      expect(operations, isEmpty);
+      expect(stubStorage.savedEmployees, hasLength(1));
+      expect(stubStorage.savedEmployees[0].name, 'Updated');
     });
   });
 
@@ -340,6 +370,16 @@ void main() {
         message: 'OK',
       );
       fakeApi.setResponse(mockResponse);
+
+      stubStorage.setEmployees([
+        Employee(
+          id: -1,
+          name: 'Synced',
+          salary: '5000',
+          age: '30',
+          profileImage: '',
+        ),
+      ]);
 
       await stubStorage.addSyncOperation(
         SyncOperation.create(

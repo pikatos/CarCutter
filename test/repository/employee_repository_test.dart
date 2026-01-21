@@ -275,6 +275,21 @@ void main() {
 
   group('EmployeeRepository.createEmployee', () {
     test('returns created employee with local ID', () async {
+      final createdEmployee = Employee(
+        id: 10,
+        name: 'New Employee',
+        salary: '4000',
+        age: '22',
+        profileImage: '',
+      );
+      fakeApi.setResponse(
+        EmployeeResponse(
+          status: 'success',
+          data: [createdEmployee],
+          message: 'OK',
+        ),
+      );
+
       final result = await repository.createEmployee(
         name: 'New Employee',
         salary: '4000',
@@ -286,8 +301,9 @@ void main() {
       expect(fakeApi.lastArgs!['name'], 'New Employee');
 
       final operations = await stubStorage.loadPendingOperations();
-      expect(operations, hasLength(1));
-      expect(operations[0].type, SyncOperationType.create);
+      expect(operations, isEmpty);
+      expect(stubStorage.savedEmployees, hasLength(1));
+      expect(stubStorage.savedEmployees[0].id, 10);
     });
   });
 
@@ -312,6 +328,11 @@ void main() {
       expect(result.name, 'Updated');
       expect(result.id, 1);
       expect(fakeApi.lastMethod, 'updateEmployee');
+
+      final operations = await stubStorage.loadPendingOperations();
+      expect(operations, isEmpty);
+      expect(stubStorage.savedEmployees, hasLength(1));
+      expect(stubStorage.savedEmployees[0].name, 'Updated');
     });
   });
 
