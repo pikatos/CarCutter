@@ -171,35 +171,25 @@ class EmployeeLocalStorage {
   ) async {
     final operations = await getAllPendingOperations();
     final result = List<Employee>.from(serverEmployees);
-    final serverIds = serverEmployees.map((e) => e.id).toSet();
-    final pendingOperations = <SyncOperation>[];
 
     for (final op in operations) {
       switch (op.type) {
         case SyncOperationType.create:
           result.add(op.employee);
-          pendingOperations.add(op);
           break;
         case SyncOperationType.update:
-          if (serverIds.contains(op.employee.id)) {
-            final index = result.indexWhere((e) => e.id == op.employee.id);
-            if (index != -1) {
-              result[index] = op.employee;
-            }
-            pendingOperations.add(op);
+          final index = result.indexWhere((e) => e.id == op.employee.id);
+          if (index != -1) {
+            result[index] = op.employee;
           }
           break;
         case SyncOperationType.delete:
-          if (serverIds.contains(op.employee.id)) {
-            result.removeWhere((e) => e.id == op.employee.id);
-            pendingOperations.add(op);
-          }
+          result.removeWhere((e) => e.id == op.employee.id);
           break;
       }
     }
 
     await saveEmployees(result);
-    await savePendingOperations(pendingOperations);
     return result;
   }
 }
