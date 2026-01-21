@@ -17,10 +17,8 @@ class EmployeeRepository with ChangeNotifier {
     try {
       final response = await _api.getAllEmployees();
       final serverEmployees = response.data ?? [];
-      final operations = await _localStorage.getAllPendingOperations();
-      final merged = _localStorage.mergeWithPendingOperations(
+      final merged = await _localStorage.mergeWithPendingOperations(
         serverEmployees,
-        operations,
       );
       await _localStorage.saveEmployees(merged);
       return merged;

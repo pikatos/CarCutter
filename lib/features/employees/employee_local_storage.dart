@@ -166,10 +166,10 @@ class EmployeeLocalStorage {
     await file.writeAsString(jsonEncode(json));
   }
 
-  List<Employee> mergeWithPendingOperations(
+  Future<List<Employee>> mergeWithPendingOperations(
     List<Employee> serverEmployees,
-    List<SyncOperation> operations,
-  ) {
+  ) async {
+    final operations = await getAllPendingOperations();
     final result = List<Employee>.from(serverEmployees);
 
     for (final op in operations) {
