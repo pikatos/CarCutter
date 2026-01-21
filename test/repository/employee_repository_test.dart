@@ -253,7 +253,7 @@ void main() {
       );
       fakeApi.setResponse(mockResponse);
 
-      final result = await repository.getEmployee(1);
+      final result = await repository.fetchEmployee(1);
 
       expect(result.id, 1);
       expect(result.name, 'John');

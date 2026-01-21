@@ -25,7 +25,7 @@ class EmployeeRepository with ChangeNotifier {
     }
   }
 
-  Future<Employee> getEmployee(int id) async {
+  Future<Employee> fetchEmployee(int id) async {
     try {
       final response = await _api.getEmployee(id);
       final employee = response.data!.first;
@@ -61,10 +61,7 @@ class EmployeeRepository with ChangeNotifier {
   }
 
   Future<void> deleteEmployee(int id) async {
-    final employee = await _localStorage.loadEmployee(id);
-    if (employee != null) {
-      await _localStorage.deleteEmployeeOffline(id);
-    }
+    await _localStorage.deleteEmployeeOffline(id);
     await syncPendingOperations();
   }
 
@@ -94,11 +91,12 @@ class EmployeeRepository with ChangeNotifier {
             await _api.deleteEmployee(operation.employee.id);
             break;
         }
-      } on InvalidHttpResponse catch (e) {
+      } on InvalidHttpResponse catch (_) {
         failedOperations.add(operation);
-      } on EmployeeApiInvalidResponse catch (e) {
-        failedOperations.add(operation);
-      } catch (e) {
+        // TODO: reschedule sync, if status == 429 wait (response.x-rate-limit-reset - response.date + 4)
+      } on EmployeeApiInvalidResponse catch (_) {
+        // TODO: invalid operation, undo change in employees if any
+      } catch (_) {
         failedOperations.add(operation);
       }
     }
