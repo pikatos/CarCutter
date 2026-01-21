@@ -1,31 +1,37 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:carcutter/common/lock.dart';
 import 'package:path_provider/path_provider.dart';
 import 'employee_model.dart';
 
+class EmployeeLocalStorageContent {
+  List<Employee> employees;
+  List<SyncOperation> pendingOperations;
+  int localIdCounter;
+
+  EmployeeLocalStorageContent({
+    required this.employees,
+    required this.pendingOperations,
+    required this.localIdCounter,
+  });
+
+  int getNextLocalId() {
+    final id = localIdCounter;
+    localIdCounter = id - 1;
+    return id;
+  }
+}
+
 class EmployeeLocalStorage {
-  static const String _employeesFile = 'employees.json';
-  static const String _syncQueueFile = 'sync_queue.json';
-  static const String _localIdCounterFile = 'local_id_counter.json';
+  static const String _storageFile = 'storage.json';
+
+  final Lock _lock;
+
+  EmployeeLocalStorage() : _lock = Lock();
 
   Future<List<Employee>> loadEmployees() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$_employeesFile');
-
-    if (!await file.exists()) {
-      return [];
-    }
-
-    try {
-      final jsonString = await file.readAsString();
-      final json = jsonDecode(jsonString) as Map<String, dynamic>;
-      final data = json['data'] as List;
-      return data
-          .map((e) => Employee.fromLocalJson(e as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      return [];
-    }
+    final content = await loadContent();
+    return content.employees;
   }
 
   Future<Employee?> loadEmployee(int id) async {
@@ -38,18 +44,15 @@ class EmployeeLocalStorage {
   }
 
   Future<void> saveEmployees(List<Employee> employees) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$_employeesFile');
-
-    final json = {'data': employees.map((e) => e.toJson()).toList()};
-
-    await file.writeAsString(jsonEncode(json));
+    await performTransaction((content) async {
+      content.employees = employees;
+    });
   }
 
   Future<void> addEmployee(Employee employee) async {
-    final employees = await loadEmployees();
-    employees.add(employee);
-    await saveEmployees(employees);
+    await performTransaction((content) async {
+      content.employees.add(employee);
+    });
   }
 
   Future<Employee> addEmployeeOffline({
@@ -57,143 +60,159 @@ class EmployeeLocalStorage {
     required String salary,
     required String age,
   }) async {
-    final localId = await getNextLocalId();
-    final employee = Employee(
-      id: localId,
-      name: name,
-      salary: salary,
-      age: age,
-      profileImage: '',
+    return await performTransaction((content) async {
+      final employee = Employee(
+        id: content.getNextLocalId(),
+        name: name,
+        salary: salary,
+        age: age,
+        profileImage: '',
+      );
+      content.employees.add(employee);
+      content.pendingOperations.add(SyncOperation.create(employee: employee));
+      return employee;
+    });
+  }
+
+  Future<T> performTransaction<T>(
+    Future<T> Function(EmployeeLocalStorageContent) transaction,
+  ) async {
+    await _lock.lock();
+    try {
+      var content = await loadContent();
+      final result = await transaction(content);
+      await saveContent(content);
+      return result;
+    } finally {
+      _lock.release();
+    }
+  }
+
+  Future<EmployeeLocalStorageContent> loadContent() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/$_storageFile');
+
+    if (!await file.exists()) {
+      return EmployeeLocalStorageContent(
+        employees: [],
+        pendingOperations: [],
+        localIdCounter: -1,
+      );
+    }
+
+    final jsonString = await file.readAsString();
+    final json = jsonDecode(jsonString) as Map<String, dynamic>;
+
+    return EmployeeLocalStorageContent(
+      employees:
+          (json['employees'] as List?)
+              ?.map((e) => Employee.fromLocalJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      pendingOperations:
+          (json['pendingOperations'] as List?)
+              ?.map((e) => SyncOperation.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      localIdCounter: json['localIdCounter'] as int? ?? -1,
     );
+  }
 
-    await addSyncOperation(SyncOperation.create(employee: employee));
+  Future<void> saveContent(EmployeeLocalStorageContent content) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/$_storageFile');
 
-    await addEmployee(employee);
+    final json = {
+      'employees': content.employees.map((e) => e.toJson()).toList(),
+      'pendingOperations': content.pendingOperations
+          .map((e) => e.toJson())
+          .toList(),
+      'localIdCounter': content.localIdCounter,
+    };
 
-    return employee;
+    await file.writeAsString(jsonEncode(json));
   }
 
   Future<void> updateEmployee(Employee employee) async {
-    final employees = await loadEmployees();
-    final index = employees.indexWhere((e) => e.id == employee.id);
-    if (index != -1) {
-      employees[index] = employee;
-      await saveEmployees(employees);
-    }
+    await performTransaction((content) async {
+      final index = content.employees.indexWhere((e) => e.id == employee.id);
+      if (index != -1) {
+        content.employees[index] = employee;
+      }
+    });
   }
 
   Future<void> updateEmployeeOffline(Employee employee) async {
-    await addSyncOperation(SyncOperation.update(employee: employee));
-    await updateEmployee(employee);
+    await performTransaction((content) async {
+      final index = content.employees.indexWhere((e) => e.id == employee.id);
+      if (index != -1) {
+        content.employees[index] = employee;
+        content.pendingOperations.add(SyncOperation.update(employee: employee));
+      }
+    });
   }
 
   Future<void> deleteEmployee(int id) async {
-    final employees = await loadEmployees();
-    employees.removeWhere((e) => e.id == id);
-    await saveEmployees(employees);
+    await performTransaction((content) async {
+      content.employees.removeWhere((e) => e.id == id);
+    });
   }
 
   Future<void> deleteEmployeeOffline(int id) async {
-    final employee = await loadEmployee(id);
-    if (employee != null) {
-      await addSyncOperation(SyncOperation.delete(employee: employee));
-    }
-    await deleteEmployee(id);
-  }
-
-  Future<int> getNextLocalId() async {
-    final id = await _loadLocalIdCounter();
-    await _saveLocalIdCounter(id - 1);
-    return id;
-  }
-
-  Future<int> _loadLocalIdCounter() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$_localIdCounterFile');
-
-    if (await file.exists()) {
+    await performTransaction((content) async {
       try {
-        final jsonString = await file.readAsString();
-        final json = jsonDecode(jsonString) as Map<String, dynamic>;
-        return json['counter'] as int;
-      } catch (e) {
-        return -1;
-      }
-    }
-    return -1;
-  }
-
-  Future<void> _saveLocalIdCounter(int counter) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$_localIdCounterFile');
-
-    final json = {'counter': counter};
-    await file.writeAsString(jsonEncode(json));
+        final employee = content.employees.firstWhere((e) => e.id == id);
+        content.employees.removeWhere((e) => e.id == id);
+        content.pendingOperations.add(SyncOperation.delete(employee: employee));
+      } catch (_) {}
+    });
   }
 
   Future<List<SyncOperation>> loadPendingOperations() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$_syncQueueFile');
-
-    if (!await file.exists()) {
-      return [];
-    }
-
-    try {
-      final jsonString = await file.readAsString();
-      final json = jsonDecode(jsonString) as Map<String, dynamic>;
-      final operations = json['operations'] as List;
-      return operations
-          .map((e) => SyncOperation.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      return [];
-    }
+    final content = await loadContent();
+    return content.pendingOperations;
   }
 
   Future<void> addSyncOperation(SyncOperation operation) async {
-    final operations = await loadPendingOperations();
-    operations.add(operation);
-    await savePendingOperations(operations);
+    await performTransaction((content) async {
+      content.pendingOperations.add(operation);
+    });
   }
 
   Future<void> savePendingOperations(List<SyncOperation> operations) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$_syncQueueFile');
-
-    final json = {'operations': operations.map((e) => e.toJson()).toList()};
-
-    await file.writeAsString(jsonEncode(json));
-
-    if (operations.isEmpty) {
-      await _saveLocalIdCounter(-1);
-    }
+    await performTransaction((content) async {
+      content.pendingOperations = operations;
+    });
   }
 
   Future<List<Employee>> mergeWithPendingOperations(
     List<Employee> serverEmployees,
   ) async {
-    final operations = await loadPendingOperations();
-    final result = List<Employee>.from(serverEmployees);
+    return await performTransaction((content) async {
+      final result = List<Employee>.from(serverEmployees);
 
-    for (final op in operations) {
-      switch (op.type) {
-        case SyncOperationType.create:
-          result.add(op.employee);
-          break;
-        case SyncOperationType.update:
-          final index = result.indexWhere((e) => e.id == op.employee.id);
-          if (index != -1) {
-            result[index] = op.employee;
-          }
-          break;
-        case SyncOperationType.delete:
-          result.removeWhere((e) => e.id == op.employee.id);
-          break;
+      for (final operation in content.pendingOperations) {
+        switch (operation.type) {
+          case SyncOperationType.create:
+            result.add(operation.employee);
+            break;
+          case SyncOperationType.update:
+            final index = result.indexWhere(
+              (e) => e.id == operation.employee.id,
+            );
+            if (index != -1) {
+              result[index] = operation.employee;
+            }
+            break;
+          case SyncOperationType.delete:
+            result.removeWhere((e) => e.id == operation.employee.id);
+            break;
+        }
       }
-    }
 
-    await saveEmployees(result);
-    return result;
+      content.employees = result;
+
+      return result;
+    });
   }
 }

@@ -16,44 +16,74 @@ class MockLocalStorage extends EmployeeLocalStorage {
   int get localIdCounter => _localIdCounter;
 
   @override
+  Future<EmployeeLocalStorageContent> loadContent() async {
+    final storageJson = _files['storage.json'];
+    if (storageJson == null) {
+      return EmployeeLocalStorageContent(
+        employees: [],
+        pendingOperations: [],
+        localIdCounter: -1,
+      );
+    }
+    final json = jsonDecode(storageJson) as Map<String, dynamic>;
+    return EmployeeLocalStorageContent(
+      employees:
+          (json['employees'] as List?)
+              ?.map((e) => Employee.fromLocalJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      pendingOperations:
+          (json['pendingOperations'] as List?)
+              ?.map((e) => SyncOperation.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      localIdCounter: json['localIdCounter'] as int? ?? -1,
+    );
+  }
+
+  @override
+  Future<void> saveContent(EmployeeLocalStorageContent content) async {
+    final json = {
+      'employees': content.employees.map((e) => e.toJson()).toList(),
+      'pendingOperations': content.pendingOperations
+          .map((e) => e.toJson())
+          .toList(),
+      'localIdCounter': content.localIdCounter,
+    };
+    _files['storage.json'] = jsonEncode(json);
+  }
+
+  @override
   Future<List<Employee>> loadEmployees() async {
-    final employeesJson = _files['employees.json'];
-    if (employeesJson == null) return [];
-    final json = jsonDecode(employeesJson) as Map<String, dynamic>;
-    final data = json['data'] as List;
-    return data
-        .map((e) => Employee.fromLocalJson(e as Map<String, dynamic>))
-        .toList();
+    final content = await loadContent();
+    return content.employees;
   }
 
   @override
   Future<void> saveEmployees(List<Employee> employees) async {
-    final json = {'data': employees.map((e) => e.toJson()).toList()};
-    _files['employees.json'] = jsonEncode(json);
+    final content = await loadContent();
+    content.employees = employees;
+    await saveContent(content);
   }
 
   @override
   Future<List<SyncOperation>> loadPendingOperations() async {
-    final opsJson = _files['sync_queue.json'];
-    if (opsJson == null) return [];
-    final json = jsonDecode(opsJson) as Map<String, dynamic>;
-    final operations = json['operations'] as List;
-    return operations
-        .map((e) => SyncOperation.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final content = await loadContent();
+    return content.pendingOperations;
   }
 
   @override
   Future<void> addSyncOperation(SyncOperation operation) async {
-    final operations = await loadPendingOperations();
-    operations.add(operation);
-    await savePendingOperations(operations);
+    final content = await loadContent();
+    content.pendingOperations.add(operation);
+    await saveContent(content);
   }
 
   @override
   Future<void> savePendingOperations(List<SyncOperation> operations) async {
-    final json = {'operations': operations.map((e) => e.toJson()).toList()};
-    _files['sync_queue.json'] = jsonEncode(json);
+    final content = await loadContent();
+    content.pendingOperations = operations;
+    await saveContent(content);
     if (operations.isEmpty) {
       _localIdCounter = -1;
     }

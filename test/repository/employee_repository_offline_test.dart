@@ -76,6 +76,22 @@ class StubLocalStorage extends EmployeeLocalStorage {
   List<Employee> get savedEmployees => List.from(_employees);
 
   @override
+  Future<EmployeeLocalStorageContent> loadContent() async {
+    return EmployeeLocalStorageContent(
+      employees: List.from(_employees),
+      pendingOperations: List.from(_operations),
+      localIdCounter: _nextLocalId,
+    );
+  }
+
+  @override
+  Future<void> saveContent(EmployeeLocalStorageContent content) async {
+    _employees = List.from(content.employees);
+    _operations = List<SyncOperation>.from(content.pendingOperations);
+    _nextLocalId = content.localIdCounter;
+  }
+
+  @override
   Future<List<Employee>> loadEmployees() async {
     return List.from(_employees);
   }
@@ -147,25 +163,11 @@ class StubLocalStorage extends EmployeeLocalStorage {
 
   @override
   Future<void> deleteEmployeeOffline(int id) async {
-    _operations.add(
-      SyncOperation.delete(
-        employee: Employee(
-          id: id,
-          name: '',
-          salary: '',
-          age: '',
-          profileImage: '',
-        ),
-      ),
-    );
-    _employees.removeWhere((e) => e.id == id);
-  }
-
-  @override
-  Future<int> getNextLocalId() async {
-    final id = _nextLocalId;
-    _nextLocalId--;
-    return id;
+    try {
+      final employee = _employees.firstWhere((e) => e.id == id);
+      _employees.removeWhere((e) => e.id == id);
+      _operations.add(SyncOperation.delete(employee: employee));
+    } catch (_) {}
   }
 
   @override
