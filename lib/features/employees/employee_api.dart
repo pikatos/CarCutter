@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:carcutter/features/employees/employee_api_invalid_response.dart';
 import 'package:carcutter/common/invalid_http_response.dart';
 import 'employee_model.dart';
 
@@ -30,7 +31,7 @@ class EmployeeApi implements EmployeeApiInterface {
         Employee.fromListJson,
       );
       if (employeeResponse.status != 'success') {
-        throw Exception(employeeResponse.message);
+        throw EmployeeApiInvalidResponse(employeeResponse);
       }
       return employeeResponse;
     } else {
@@ -47,7 +48,7 @@ class EmployeeApi implements EmployeeApiInterface {
         Employee.fromListJson,
       );
       if (employeeResponse.status != 'success') {
-        throw Exception(employeeResponse.message);
+        throw EmployeeApiInvalidResponse(employeeResponse);
       }
       return employeeResponse;
     } else {
@@ -72,7 +73,7 @@ class EmployeeApi implements EmployeeApiInterface {
         Employee.fromJson,
       );
       if (employeeResponse.status != 'success') {
-        throw Exception(employeeResponse.message);
+        throw EmployeeApiInvalidResponse(employeeResponse);
       }
       return employeeResponse;
     } else {
@@ -103,7 +104,7 @@ class EmployeeApi implements EmployeeApiInterface {
         Employee.fromJson,
       );
       if (employeeResponse.status != 'success') {
-        throw Exception(employeeResponse.message);
+        throw EmployeeApiInvalidResponse(employeeResponse);
       }
       return employeeResponse;
     } else {
@@ -120,7 +121,7 @@ class EmployeeApi implements EmployeeApiInterface {
         Employee.fromListJson,
       );
       if (employeeResponse.status != 'success') {
-        throw Exception(employeeResponse.message);
+        throw EmployeeApiInvalidResponse(employeeResponse);
       }
       return employeeResponse;
     } else {
