@@ -24,6 +24,8 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
   }
 
   Future<void> _fetchEmployees() async {
+    if (_isLoading) return;
+
     setState(() {
       _isLoading = true;
       _error = null;
