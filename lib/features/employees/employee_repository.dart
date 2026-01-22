@@ -76,7 +76,7 @@ class EmployeeRepository {
     } catch (e) {
       await _localStorage.deleteEmployee(localEmployee.id);
       _changesController.add(EmployeeChangeDeleted(localEmployee));
-      _changesController.addError(Exception("Failed to create emplyee $name"));
+      _changesController.addError(Exception("Failed to create employee $name"));
       rethrow;
     }
   }
@@ -94,7 +94,7 @@ class EmployeeRepository {
       await _localStorage.updateEmployee(prevLocalEmployee);
       _changesController.add(EmployeeChangeUpdated(prevLocalEmployee));
       _changesController.addError(
-        Exception("Failed to update emplyee ${employee.name}"),
+        Exception("Failed to update employee ${employee.name}"),
       );
       rethrow;
     }
@@ -109,7 +109,7 @@ class EmployeeRepository {
       await _localStorage.addEmployee(employee);
       _changesController.add(EmployeeChangeCreated(employee));
       _changesController.addError(
-        Exception("Failed to delete emplyee ${employee.name}"),
+        Exception("Failed to delete employee ${employee.name}"),
       );
       rethrow;
     }
