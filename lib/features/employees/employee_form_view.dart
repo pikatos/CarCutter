@@ -3,16 +3,16 @@ import 'package:provider/provider.dart';
 import 'employee_repository.dart';
 import 'employee_model.dart';
 
-class EmployeeFormScreen extends StatefulWidget {
+class EmployeeFormView extends StatefulWidget {
   final Employee? employee;
 
-  const EmployeeFormScreen({super.key, this.employee});
+  const EmployeeFormView({super.key, this.employee});
 
   @override
-  State<EmployeeFormScreen> createState() => _EmployeeFormScreenState();
+  State<EmployeeFormView> createState() => _EmployeeFormViewState();
 }
 
-class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
+class _EmployeeFormViewState extends State<EmployeeFormView> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _salaryController = TextEditingController();

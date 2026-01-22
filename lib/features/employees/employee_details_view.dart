@@ -5,16 +5,16 @@ import 'package:provider/provider.dart';
 import 'employee_repository.dart';
 import 'employee_model.dart';
 
-class EmployeeDetailsScreen extends StatefulWidget {
+class EmployeeDetailsView extends StatefulWidget {
   final Employee employee;
 
-  const EmployeeDetailsScreen({super.key, required this.employee});
+  const EmployeeDetailsView({super.key, required this.employee});
 
   @override
-  State<EmployeeDetailsScreen> createState() => _EmployeeDetailsScreenState();
+  State<EmployeeDetailsView> createState() => _EmployeeDetailsViewState();
 }
 
-class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
+class _EmployeeDetailsViewState extends State<EmployeeDetailsView> {
   late Employee _employee;
   StreamSubscription<EmployeeChange>? _changesSubscription;
 

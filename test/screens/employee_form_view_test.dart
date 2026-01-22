@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:carcutter/features/employees/employee_api.dart';
-import 'package:carcutter/features/employees/employee_form_screen.dart';
+import 'package:carcutter/features/employees/employee_form_view.dart';
 import 'package:carcutter/features/employees/employee_list_state.dart';
 import 'package:carcutter/features/employees/employee_local_storage.dart';
 import 'package:carcutter/features/employees/employee_model.dart';
@@ -166,11 +166,11 @@ void main() {
               EmployeeListState(repository: repository, listKey: listKey),
         ),
       ],
-      child: MaterialApp(home: EmployeeFormScreen(employee: employee)),
+      child: MaterialApp(home: EmployeeFormView(employee: employee)),
     );
   }
 
-  group('EmployeeFormScreen create mode', () {
+  group('EmployeeFormView create mode', () {
     testWidgets('shows New Employee title', (WidgetTester tester) async {
       await tester.pumpWidget(createFormWidget());
       expect(find.text('New Employee'), findsOneWidget);

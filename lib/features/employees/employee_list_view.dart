@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'employee_repository.dart';
 import 'employee_model.dart';
-import 'employee_details_screen.dart';
-import 'employee_form_screen.dart';
+import 'employee_details_view.dart';
+import 'employee_form_view.dart';
 import 'employee_list_state.dart';
 
 extension ScaffoldHelper on BuildContext {
@@ -19,7 +19,7 @@ extension EmployeeNavigation on BuildContext {
     await Navigator.push<Employee>(
       this,
       MaterialPageRoute(
-        builder: (context) => EmployeeDetailsScreen(employee: employee),
+        builder: (context) => EmployeeDetailsView(employee: employee),
       ),
     );
   }
@@ -27,7 +27,7 @@ extension EmployeeNavigation on BuildContext {
   void navigateToCreateEmployee() {
     Navigator.push<Employee>(
       this,
-      MaterialPageRoute(builder: (context) => const EmployeeFormScreen()),
+      MaterialPageRoute(builder: (context) => const EmployeeFormView()),
     );
   }
 
@@ -35,7 +35,7 @@ extension EmployeeNavigation on BuildContext {
     Navigator.push<Employee>(
       this,
       MaterialPageRoute(
-        builder: (context) => EmployeeFormScreen(employee: employee),
+        builder: (context) => EmployeeFormView(employee: employee),
       ),
     );
   }

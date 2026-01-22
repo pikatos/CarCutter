@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:carcutter/features/employees/employee_api.dart';
-import 'package:carcutter/features/employees/employee_details_screen.dart';
+import 'package:carcutter/features/employees/employee_details_view.dart';
 import 'package:carcutter/features/employees/employee_list_state.dart';
 import 'package:carcutter/features/employees/employee_local_storage.dart';
 import 'package:carcutter/features/employees/employee_model.dart';
@@ -159,11 +159,11 @@ void main() {
               EmployeeListState(repository: repository, listKey: listKey),
         ),
       ],
-      child: MaterialApp(home: EmployeeDetailsScreen(employee: employee)),
+      child: MaterialApp(home: EmployeeDetailsView(employee: employee)),
     );
   }
 
-  group('EmployeeDetailsScreen', () {
+  group('EmployeeDetailsView', () {
     final testEmployee = Employee(
       id: 1,
       name: 'John',
