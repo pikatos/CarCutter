@@ -72,6 +72,43 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
     }
   }
 
+  Future<bool> _showDeleteDialog() async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Delete Employee'),
+            content: Text(
+              'Are you sure you want to delete ${widget.employee!.name}?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _deleteEmployee() async {
+    final confirmed = await _showDeleteDialog();
+    if (confirmed && mounted) {
+      context
+          .read<EmployeeRepository>()
+          .deleteEmployee(widget.employee!.id)
+          .ignore();
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.employee != null;
@@ -141,6 +178,20 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
                             : Text(isEditing ? 'Update' : 'Create'),
                       ),
                     ),
+                    if (isEditing) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: TextButton(
+                          onPressed: _deleteEmployee,
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.red,
+                          ),
+                          child: const Text('Delete'),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
