@@ -51,18 +51,42 @@ class EmployeeListView extends StatefulWidget {
 }
 
 class _EmployeeListViewState extends State<EmployeeListView> {
-  final _scrollController = ScrollController();
+  final _listKey = GlobalKey<AnimatedListState>();
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
+  Widget _buildEmployeeTile(BuildContext context, Employee employee) {
+    if (employee.id == -1) {
+      return const SizedBox.shrink();
+    }
+    return Dismissible(
+      key: ValueKey(employee.id),
+      direction: DismissDirection.startToEnd,
+      background: Container(
+        color: Colors.red,
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 16),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      confirmDismiss: (direction) async {
+        final confirmed = await _showDeleteDialog(context, employee);
+        return confirmed;
+      },
+      onDismissed: (direction) {
+        context.read<EmployeeListState>().deleteEmployee(employee.id);
+      },
+      child: ListTile(
+        leading: CircleAvatar(child: Text(employee.name[0])),
+        title: Text(employee.name),
+        subtitle: Text('Age: ${employee.age}'),
+        onTap: () => context.navigateToEmployeeDetails(employee),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => EmployeeListState(repository: widget.repository),
+      create: (_) =>
+          EmployeeListState(repository: widget.repository, listKey: _listKey),
       child: Builder(
         builder: (context) {
           final state = context.watch<EmployeeListState>();
@@ -72,14 +96,6 @@ class _EmployeeListViewState extends State<EmployeeListView> {
               context.showSnackBar('Error: ${state.error}');
             } else if (state.message != null) {
               context.showSnackBar(state.message!);
-            }
-            if (state.scrollToIndex != null) {
-              _scrollController.jumpTo(
-                _scrollController.position.maxScrollExtent /
-                    state.employees.length *
-                    state.scrollToIndex!,
-              );
-              state.clearScrollTarget();
             }
             state.clearMessage();
           });
@@ -140,33 +156,18 @@ class _EmployeeListViewState extends State<EmployeeListView> {
   Widget _buildEmployeeList(EmployeeListState state, BuildContext context) {
     return RefreshIndicator(
       onRefresh: () => state.refresh(),
-      child: ListView.builder(
-        controller: _scrollController,
+      child: AnimatedList(
+        key: _listKey,
         padding: const EdgeInsets.only(bottom: 88),
-        itemCount: state.employees.length,
-        itemBuilder: (context, index) {
+        initialItemCount: state.employees.length,
+        itemBuilder: (context, index, animation) {
           final employee = state.employees[index];
-          return Dismissible(
-            key: ValueKey(employee.id),
-            direction: DismissDirection.startToEnd,
-            background: Container(
-              color: Colors.red,
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.only(left: 16),
-              child: const Icon(Icons.delete, color: Colors.white),
-            ),
-            confirmDismiss: (direction) async {
-              final confirmed = await _showDeleteDialog(context, employee);
-              return confirmed;
-            },
-            onDismissed: (direction) {
-              state.deleteEmployee(employee.id);
-            },
-            child: ListTile(
-              leading: CircleAvatar(child: Text(employee.name[0])),
-              title: Text(employee.name),
-              subtitle: Text('Age: ${employee.age}'),
-              onTap: () => context.navigateToEmployeeDetails(employee),
+          return FadeTransition(
+            opacity: animation,
+            child: SizeTransition(
+              sizeFactor: animation,
+              axisAlignment: 0.0,
+              child: _buildEmployeeTile(context, employee),
             ),
           );
         },

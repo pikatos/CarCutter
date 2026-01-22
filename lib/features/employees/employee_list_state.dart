@@ -1,10 +1,12 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'employee_repository.dart';
 import 'employee_model.dart';
+import '../../common/animated_list_model.dart';
 
 class EmployeeListState with ChangeNotifier {
   final EmployeeRepository _repository;
+  final GlobalKey<AnimatedListState> _listKey;
   StreamSubscription? _changesSubscription;
 
   List<Employee> _employees = [];
@@ -12,10 +14,19 @@ class EmployeeListState with ChangeNotifier {
   bool _isSyncing = false;
   String? _error;
   String? _message;
-  int? _scrollToIndex;
 
-  EmployeeListState({required EmployeeRepository repository})
-    : _repository = repository {
+  late final ListModel<Employee> _listModel;
+
+  EmployeeListState({
+    required EmployeeRepository repository,
+    required GlobalKey<AnimatedListState> listKey,
+  }) : _repository = repository,
+       _listKey = listKey {
+    _listModel = ListModel<Employee>(
+      listKey: _listKey,
+      initialItems: _employees,
+      removeItemBuilder: _buildRemovedItem,
+    );
     _changesSubscription = _repository.changes.listen(
       (change) {
         switch (change) {
@@ -23,20 +34,35 @@ class EmployeeListState with ChangeNotifier {
             if (!_employees.any((e) => e.id == employee.id)) {
               _employees.add(employee);
               _employees.sort(Employee.byName);
-              _scrollToIndex = _employees.indexWhere(
+              final newIndex = _employees.indexWhere(
                 (e) => e.id == employee.id,
               );
+              _listModel.insert(newIndex, employee);
             }
             _message = 'Employee ${employee.name} created';
           case EmployeeChangeUpdated(:final employee):
-            final index = _employees.indexWhere((e) => e.id == employee.id);
-            if (index != -1) {
-              _employees[index] = employee;
-              _scrollToIndex = index;
+            final oldIndex = _employees.indexWhere((e) => e.id == employee.id);
+            if (oldIndex != -1) {
+              final item = _employees[oldIndex];
+              _employees[oldIndex] = employee;
+              _employees.sort(Employee.byName);
+              final newIndex = _employees.indexWhere(
+                (e) => e.id == employee.id,
+              );
+              if (oldIndex == newIndex) {
+                _listModel.updateItem(newIndex, employee);
+              } else {
+                _listModel.removeAt(oldIndex);
+                _listModel.insert(newIndex, item);
+              }
             }
             _message = 'Employee ${employee.name} updated';
           case EmployeeChangeDeleted(:final employee):
-            _employees.removeWhere((e) => e.id == employee.id);
+            final index = _employees.indexWhere((e) => e.id == employee.id);
+            if (index != -1) {
+              _listModel.removeAt(index);
+              _employees.removeAt(index);
+            }
             _message = 'Employee ${employee.name} deleted';
         }
         _error = null;
@@ -50,6 +76,23 @@ class EmployeeListState with ChangeNotifier {
     loadEmployees();
   }
 
+  static Widget _buildRemovedItem(
+    BuildContext context,
+    Animation<double> animation,
+  ) {
+    return SizeTransition(
+      sizeFactor: animation,
+      child: FadeTransition(
+        opacity: animation,
+        child: const ListTile(
+          leading: CircleAvatar(child: Text('')),
+          title: Text(''),
+          subtitle: Text(''),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _changesSubscription?.cancel();
@@ -61,11 +104,6 @@ class EmployeeListState with ChangeNotifier {
   bool get isSyncing => _isSyncing;
   String? get error => _error;
   String? get message => _message;
-  int? get scrollToIndex => _scrollToIndex;
-
-  void clearScrollTarget() {
-    _scrollToIndex = null;
-  }
 
   void clearMessage() {
     _message = null;
@@ -79,6 +117,7 @@ class EmployeeListState with ChangeNotifier {
     try {
       await _repository.fetchEmployees().forEach((employees) {
         _employees = employees;
+        _listModel.replaceAll(employees);
         _isSyncing = false;
         notifyListeners();
       });
@@ -98,6 +137,7 @@ class EmployeeListState with ChangeNotifier {
     try {
       await _repository.fetchEmployees().forEach((employees) {
         _employees = employees;
+        _listModel.replaceAll(employees);
         notifyListeners();
       });
     } catch (e) {
@@ -111,6 +151,7 @@ class EmployeeListState with ChangeNotifier {
   void deleteEmployee(int id) {
     final index = _employees.indexWhere((e) => e.id == id);
     if (index != -1) {
+      _listModel.removeAt(index);
       _employees.removeAt(index);
       _error = null;
       notifyListeners();

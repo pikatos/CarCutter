@@ -157,11 +157,13 @@ void main() {
       api: stubApi,
       localStorage: stubStorage,
     );
+    final listKey = GlobalKey<AnimatedListState>();
     return MultiProvider(
       providers: [
         Provider<EmployeeRepository>.value(value: repository),
         ChangeNotifierProvider(
-          create: (_) => EmployeeListState(repository: repository),
+          create: (_) =>
+              EmployeeListState(repository: repository, listKey: listKey),
         ),
       ],
       child: MaterialApp(home: EmployeeFormScreen(employee: employee)),
