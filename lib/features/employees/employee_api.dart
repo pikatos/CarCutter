@@ -67,18 +67,18 @@ class EmployeeApi implements EmployeeApiInterface {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'name': name, 'salary': salary, 'age': age}),
     );
-    if (response.statusCode == 200) {
-      final employeeResponse = EmployeeResponse.fromJson(
-        jsonDecode(response.body),
-        Employee.fromJson,
-      );
-      if (employeeResponse.status != 'success') {
-        throw EmployeeApiInvalidResponse(employeeResponse);
-      }
-      return employeeResponse;
-    } else {
+    if (response.statusCode != 200) {
       throw InvalidHttpResponse(response);
     }
+
+    final employeeResponse = EmployeeResponse.fromJson(
+      jsonDecode(response.body),
+      Employee.fromJson,
+    );
+    if (employeeResponse.status != 'success') {
+      throw EmployeeApiInvalidResponse(employeeResponse);
+    }
+    return employeeResponse;
   }
 
   @override
@@ -93,39 +93,33 @@ class EmployeeApi implements EmployeeApiInterface {
       headers: {'Content-Type': 'application/json'},
       body: body,
     );
-
+    if (response.statusCode != 200) {
+      throw InvalidHttpResponse(response);
+    }
     dynamic json = jsonDecode(response.body);
     json['data']['id'] =
         employee.id; // API doesn't return ID, inject from request
 
-    if (response.statusCode == 200) {
-      final employeeResponse = EmployeeResponse.fromJson(
-        json,
-        Employee.fromJson,
-      );
-      if (employeeResponse.status != 'success') {
-        throw EmployeeApiInvalidResponse(employeeResponse);
-      }
-      return employeeResponse;
-    } else {
-      throw InvalidHttpResponse(response);
+    final employeeResponse = EmployeeResponse.fromJson(json, Employee.fromJson);
+    if (employeeResponse.status != 'success') {
+      throw EmployeeApiInvalidResponse(employeeResponse);
     }
+    return employeeResponse;
   }
 
   @override
   Future<EmployeeResponse> deleteEmployee(int id) async {
     final response = await _client.delete(Uri.parse('$baseUrl/delete/$id'));
-    if (response.statusCode == 200) {
-      final employeeResponse = EmployeeResponse.fromJson(
-        jsonDecode(response.body),
-        Employee.fromListJson,
-      );
-      if (employeeResponse.status != 'success') {
-        throw EmployeeApiInvalidResponse(employeeResponse);
-      }
-      return employeeResponse;
-    } else {
+    if (response.statusCode != 200) {
       throw InvalidHttpResponse(response);
     }
+    final employeeResponse = EmployeeResponse.fromJson(
+      jsonDecode(response.body),
+      Employee.fromListJson,
+    );
+    if (employeeResponse.status != 'success') {
+      throw EmployeeApiInvalidResponse(employeeResponse);
+    }
+    return employeeResponse;
   }
 }
