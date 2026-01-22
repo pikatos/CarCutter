@@ -1,16 +1,14 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:carcutter/common/invalid_http_response.dart';
 import 'employee_api.dart';
 import 'employee_api_invalid_response.dart';
 import 'employee_local_storage.dart';
 import 'employee_model.dart';
 
-class EmployeeRepository with ChangeNotifier {
+class EmployeeRepository {
   final EmployeeApiInterface _api;
   final EmployeeLocalStorage _localStorage;
-  SyncOperation? _pendingOperation;
 
   EmployeeRepository({
     EmployeeApiInterface? api,
@@ -69,15 +67,11 @@ class EmployeeRepository with ChangeNotifier {
   }
 
   Future<void> syncPendingOperations() async {
-    if (_pendingOperation != null) {
-      return;
-    }
     final pendingOperations = await _localStorage.loadPendingOperations();
     if (pendingOperations.isEmpty) {
       return;
     }
     final operation = pendingOperations.first;
-    _pendingOperation = operation;
     try {
       switch (operation.type) {
         case SyncOperationType.create:
@@ -87,9 +81,7 @@ class EmployeeRepository with ChangeNotifier {
             age: operation.employee.age,
           );
           final created = response.data!.first;
-          _pendingOperation = await _localStorage.performTransaction((
-            content,
-          ) async {
+          await _localStorage.performTransaction((content) async {
             final index = content.employees.indexWhere(
               (e) => e.id == operation.employee.id,
             );
@@ -97,16 +89,12 @@ class EmployeeRepository with ChangeNotifier {
               content.employees[index] = created;
             }
             content.pendingOperations.removeAt(0);
-            return content.pendingOperations.firstOrNull;
           });
-          notifyListeners();
           break;
         case SyncOperationType.update:
           final response = await _api.updateEmployee(operation.employee);
           final updated = response.data!.first;
-          _pendingOperation = await _localStorage.performTransaction((
-            content,
-          ) async {
+          await _localStorage.performTransaction((content) async {
             final index = content.employees.indexWhere(
               (e) => e.id == operation.employee.id,
             );
@@ -114,49 +102,29 @@ class EmployeeRepository with ChangeNotifier {
               content.employees[index] = updated;
             }
             content.pendingOperations.removeAt(0);
-            return content.pendingOperations.firstOrNull;
           });
-          notifyListeners();
           break;
         case SyncOperationType.delete:
           await _api.deleteEmployee(operation.employee.id);
-          _pendingOperation = await _localStorage.performTransaction((
-            content,
-          ) async {
+          await _localStorage.performTransaction((content) async {
             content.pendingOperations.removeAt(0);
-            return content.pendingOperations.firstOrNull;
           });
-          notifyListeners();
           break;
       }
     } on InvalidHttpResponse catch (_) {
-      // TODO: reschedule sync, if status == 429 wait (response.x-rate-limit-reset - response.date + 4)
-      _pendingOperation = null;
       unawaited(() async {
         await Future.delayed(Duration(seconds: 60));
         unawaited(syncPendingOperations());
       }());
     } on EmployeeApiInvalidResponse catch (_) {
-      // drop operation
-      // TODO: alert user
-      _pendingOperation = await _localStorage.performTransaction((
-        content,
-      ) async {
+      await _localStorage.performTransaction((content) async {
         content.pendingOperations.removeAt(0);
-        return content.pendingOperations.firstOrNull;
       });
-      notifyListeners();
       unawaited(syncPendingOperations());
     } catch (_) {
-      // drop operation
-      // TODO: alert user
-      _pendingOperation = await _localStorage.performTransaction((
-        content,
-      ) async {
+      await _localStorage.performTransaction((content) async {
         content.pendingOperations.removeAt(0);
-        return content.pendingOperations.firstOrNull;
       });
-      notifyListeners();
       unawaited(syncPendingOperations());
     }
   }

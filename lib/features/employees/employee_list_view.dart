@@ -1,0 +1,183 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'employee_repository.dart';
+import 'employee_model.dart';
+import 'employee_details_screen.dart';
+import 'employee_form_screen.dart';
+import 'employee_list_state.dart';
+
+extension EmployeeNavigation on BuildContext {
+  void navigateToEmployeeDetails(Employee employee) async {
+    final result = await Navigator.push<Employee>(
+      this,
+      MaterialPageRoute(
+        builder: (context) => EmployeeDetailsScreen(employee: employee),
+      ),
+    );
+    if (result != null && mounted) {
+      read<EmployeeListState>().refresh();
+    }
+  }
+
+  void navigateToCreateEmployee() async {
+    final result = await Navigator.push<Employee>(
+      this,
+      MaterialPageRoute(builder: (context) => const EmployeeFormScreen()),
+    );
+    if (result != null && mounted) {
+      read<EmployeeListState>().refresh();
+    }
+  }
+
+  void showDeleteEmployeeDialog(Employee employee) {
+    showDialog(
+      context: this,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Employee'),
+        content: Text('Are you sure you want to delete ${employee.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteEmployee(this, employee.id);
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteEmployee(BuildContext context, int id) async {
+    final state = context.read<EmployeeListState>();
+    try {
+      await state.deleteEmployee(id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Employee deleted successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+      }
+    }
+  }
+}
+
+class EmployeeListView extends StatelessWidget {
+  final EmployeeRepository repository;
+
+  const EmployeeListView({super.key, required this.repository});
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => EmployeeListState(repository: repository),
+      child: Builder(
+        builder: (context) {
+          final state = context.watch<EmployeeListState>();
+
+          return Scaffold(
+            appBar: AppBar(title: const Text('Employees')),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () => context.navigateToCreateEmployee(),
+              child: const Icon(Icons.add),
+            ),
+            body: _buildBody(state, context),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBody(EmployeeListState state, BuildContext context) {
+    if (state.isLoading && state.employees.isEmpty) {
+      return _buildLoadingState();
+    }
+
+    if (state.error != null && state.employees.isEmpty) {
+      return _buildErrorState(state, context);
+    }
+
+    if (state.employees.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return _buildEmployeeList(state, context);
+  }
+
+  Widget _buildLoadingState() {
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  Widget _buildErrorState(EmployeeListState state, BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('Error: ${state.error}'),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => state.loadEmployees(),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return const Center(child: Text('No employees found'));
+  }
+
+  Widget _buildEmployeeList(EmployeeListState state, BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: () => state.refresh(),
+      child: ListView.builder(
+        itemCount: state.employees.length,
+        itemBuilder: (context, index) {
+          final employee = state.employees[index];
+          return EmployeeListRow(
+            employee: employee,
+            onTap: () => context.navigateToEmployeeDetails(employee),
+            onDelete: () => context.showDeleteEmployeeDialog(employee),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class EmployeeListRow extends StatelessWidget {
+  final Employee employee;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const EmployeeListRow({
+    super.key,
+    required this.employee,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: CircleAvatar(child: Text(employee.name[0])),
+      title: Text(employee.name),
+      subtitle: Text('Age: ${employee.age}'),
+      trailing: IconButton(
+        icon: const Icon(Icons.delete, color: Colors.red),
+        onPressed: onDelete,
+      ),
+      onTap: onTap,
+    );
+  }
+}

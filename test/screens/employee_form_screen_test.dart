@@ -71,9 +71,7 @@ void main() {
   Widget createFormWidget({Employee? employee}) {
     final repository = EmployeeRepository(api: stubApi);
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<EmployeeRepository>.value(value: repository),
-      ],
+      providers: [Provider<EmployeeRepository>.value(value: repository)],
       child: MaterialApp(home: EmployeeFormScreen(employee: employee)),
     );
   }

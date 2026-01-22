@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:carcutter/features/employees/employee_api.dart';
-import 'package:carcutter/features/employees/employee_list_screen.dart';
+import 'package:carcutter/features/employees/employee_list_view.dart';
 import 'package:carcutter/features/employees/employee_local_storage.dart';
 import 'package:carcutter/features/employees/employee_model.dart';
 import 'package:carcutter/features/employees/employee_repository.dart';
@@ -139,7 +139,6 @@ class StubLocalStorage extends EmployeeLocalStorage {
     return List.from(_operations);
   }
 
-  @override
   Future<void> addSyncOperation(SyncOperation operation) async {
     _operations.add(operation);
   }
@@ -185,10 +184,8 @@ void main() {
       localStorage: stubStorage,
     );
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<EmployeeRepository>.value(value: repository),
-      ],
-      child: const MaterialApp(home: EmployeeListScreen()),
+      providers: [Provider<EmployeeRepository>.value(value: repository)],
+      child: MaterialApp(home: EmployeeListView(repository: repository)),
     );
   }
 

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'features/employees/employee_list_screen.dart';
 import 'features/employees/employee_repository.dart';
+import 'features/employees/employee_list_view.dart';
 
 void main() {
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => EmployeeRepository())],
+      providers: [Provider(create: (_) => EmployeeRepository())],
       child: const MyApp(),
     ),
   );
@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const EmployeeListScreen(),
+      home: EmployeeListView(repository: context.read<EmployeeRepository>()),
     );
   }
 }
