@@ -7,6 +7,6 @@ class InvalidHttpResponse implements Exception {
 
   @override
   String toString() {
-    return 'InvalidHttpResponse: ${response.statusCode} - ${response.body}';
+    return 'InvalidHttpResponse: ${response.statusCode}';
   }
 }

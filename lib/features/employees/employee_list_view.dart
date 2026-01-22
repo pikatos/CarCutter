@@ -8,25 +8,28 @@ import 'employee_list_state.dart';
 
 extension EmployeeNavigation on BuildContext {
   void navigateToEmployeeDetails(Employee employee) async {
-    final result = await Navigator.push<Employee>(
+    await Navigator.push<Employee>(
       this,
       MaterialPageRoute(
         builder: (context) => EmployeeDetailsScreen(employee: employee),
       ),
     );
-    if (result != null && mounted) {
-      read<EmployeeListState>().refresh();
-    }
   }
 
-  void navigateToCreateEmployee() async {
-    final result = await Navigator.push<Employee>(
+  void navigateToCreateEmployee() {
+    Navigator.push<Employee>(
       this,
       MaterialPageRoute(builder: (context) => const EmployeeFormScreen()),
     );
-    if (result != null && mounted) {
-      read<EmployeeListState>().refresh();
-    }
+  }
+
+  void navigateToEditEmployee(Employee employee) {
+    Navigator.push<Employee>(
+      this,
+      MaterialPageRoute(
+        builder: (context) => EmployeeFormScreen(employee: employee),
+      ),
+    );
   }
 
   void showDeleteEmployeeDialog(Employee employee) {
@@ -57,15 +60,15 @@ extension EmployeeNavigation on BuildContext {
     try {
       await state.deleteEmployee(id);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Employee deleted successfully')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Employee deleted')));
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+        ).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
       }
     }
   }
@@ -83,6 +86,14 @@ class EmployeeListView extends StatelessWidget {
       child: Builder(
         builder: (context) {
           final state = context.watch<EmployeeListState>();
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (state.error != null) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Error: ${state.error}')));
+            }
+          });
 
           return Scaffold(
             appBar: AppBar(title: const Text('Employees')),

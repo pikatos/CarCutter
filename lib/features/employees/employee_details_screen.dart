@@ -22,7 +22,7 @@ class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
   }
 
   void _navigateToEdit() async {
-    final result = await Navigator.push(
+    final result = await Navigator.push<Employee>(
       context,
       MaterialPageRoute(
         builder: (context) => EmployeeFormScreen(employee: _employee),

@@ -43,42 +43,35 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
         _isLoading = true;
       });
 
-      try {
-        final repository = context.read<EmployeeRepository>();
-        if (widget.employee != null) {
-          final updatedEmployee = Employee(
-            id: widget.employee!.id,
-            name: _nameController.text,
-            salary: _salaryController.text,
-            age: _ageController.text,
-            profileImage: widget.employee!.profileImage,
-          );
-          final result = await repository.updateEmployee(updatedEmployee);
-          if (mounted) {
-            Navigator.pop(context, result);
-          }
-        } else {
-          final result = await repository.createEmployee(
-            name: _nameController.text,
-            salary: _salaryController.text,
-            age: _ageController.text,
-          );
-          if (mounted) {
-            Navigator.pop(context, result);
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Failed to save: $e')));
-        }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+      final repository = context.read<EmployeeRepository>();
+
+      if (widget.employee != null) {
+        final updatedEmployee = Employee(
+          id: widget.employee!.id,
+          name: _nameController.text,
+          salary: _salaryController.text,
+          age: _ageController.text,
+          profileImage: widget.employee!.profileImage,
+        );
+        () async {
+          try {
+            await repository.updateEmployee(updatedEmployee);
+          } catch (_) {}
+        }();
+      } else {
+        () async {
+          try {
+            await repository.createEmployee(
+              name: _nameController.text,
+              salary: _salaryController.text,
+              age: _ageController.text,
+            );
+          } catch (_) {}
+        }();
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
       }
     }
   }

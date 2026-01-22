@@ -13,6 +13,10 @@ class Employee {
     required this.profileImage,
   });
 
+  static int byName(Employee a, Employee b) {
+    return a.name.compareTo(b.name);
+  }
+
   factory Employee.fromListJson(Map<String, dynamic> json) {
     return Employee(
       id: json['id'] as int,
@@ -77,57 +81,5 @@ class EmployeeResponse {
       data: employees,
       message: json['message'] as String,
     );
-  }
-}
-
-enum SyncOperationType { create, update, delete }
-
-class SyncOperation {
-  final SyncOperationType type;
-  final Employee employee;
-  final DateTime timestamp;
-
-  SyncOperation.create({required this.employee})
-    : type = SyncOperationType.create,
-      timestamp = DateTime.now();
-
-  SyncOperation.update({required this.employee})
-    : type = SyncOperationType.update,
-      timestamp = DateTime.now();
-
-  SyncOperation.delete({required this.employee})
-    : type = SyncOperationType.delete,
-      timestamp = DateTime.now();
-
-  Map<String, dynamic> toJson() {
-    return {
-      'type': type.index,
-      'employee': employee.toJson(),
-      'timestamp': timestamp.toIso8601String(),
-    };
-  }
-
-  factory SyncOperation.fromJson(Map<String, dynamic> json) {
-    final type = SyncOperationType.values[json['type'] as int];
-    switch (type) {
-      case SyncOperationType.create:
-        return SyncOperation.create(
-          employee: Employee.fromLocalJson(
-            json['employee'] as Map<String, dynamic>,
-          ),
-        );
-      case SyncOperationType.update:
-        return SyncOperation.update(
-          employee: Employee.fromLocalJson(
-            json['employee'] as Map<String, dynamic>,
-          ),
-        );
-      case SyncOperationType.delete:
-        return SyncOperation.delete(
-          employee: Employee.fromLocalJson(
-            json['employee'] as Map<String, dynamic>,
-          ),
-        );
-    }
   }
 }

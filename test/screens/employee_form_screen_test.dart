@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:carcutter/features/employees/employee_api.dart';
 import 'package:carcutter/features/employees/employee_form_screen.dart';
+import 'package:carcutter/features/employees/employee_list_state.dart';
+import 'package:carcutter/features/employees/employee_local_storage.dart';
 import 'package:carcutter/features/employees/employee_model.dart';
 import 'package:carcutter/features/employees/employee_repository.dart';
 
@@ -61,17 +63,107 @@ class StubEmployeeApi implements EmployeeApiInterface {
   }
 }
 
+class StubLocalStorage extends EmployeeLocalStorage {
+  List<Employee> _employees = [];
+  int _nextLocalId = -1;
+
+  @override
+  Future<EmployeeLocalStorageContent> loadContent() async {
+    return EmployeeLocalStorageContent(
+      employees: List.from(_employees),
+      localIdCounter: _nextLocalId,
+    );
+  }
+
+  @override
+  Future<void> saveContent(EmployeeLocalStorageContent content) async {
+    _employees = List.from(content.employees);
+    _nextLocalId = content.localIdCounter;
+  }
+
+  @override
+  Future<List<Employee>> loadEmployees() async {
+    return List.from(_employees);
+  }
+
+  @override
+  Future<void> saveEmployees(List<Employee> employees) async {
+    _employees = List.from(employees);
+  }
+
+  @override
+  Future<Employee?> loadEmployee(int id) async {
+    try {
+      return _employees.firstWhere((e) => e.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<Employee> createEmployee({
+    required String name,
+    required String salary,
+    required String age,
+  }) async {
+    final localId = _nextLocalId;
+    _nextLocalId--;
+    final employee = Employee(
+      id: localId,
+      name: name,
+      salary: salary,
+      age: age,
+      profileImage: '',
+    );
+    _employees.add(employee);
+    return employee;
+  }
+
+  @override
+  Future<Employee> updateEmployee(Employee employee) async {
+    final index = _employees.indexWhere((e) => e.id == employee.id);
+    final prevEmployee = index != -1 ? _employees[index] : employee;
+    if (index != -1) {
+      _employees[index] = employee;
+    } else {
+      _employees.add(employee);
+    }
+    return prevEmployee;
+  }
+
+  @override
+  Future<Employee> deleteEmployee(int id) async {
+    final index = _employees.indexWhere((e) => e.id == id);
+    if (index != -1) {
+      final employee = _employees[index];
+      _employees.removeAt(index);
+      return employee;
+    }
+    throw Exception('Employee not found: $id');
+  }
+}
+
 void main() {
   late StubEmployeeApi stubApi;
+  late StubLocalStorage stubStorage;
 
   setUp(() {
     stubApi = StubEmployeeApi();
+    stubStorage = StubLocalStorage();
   });
 
   Widget createFormWidget({Employee? employee}) {
-    final repository = EmployeeRepository(api: stubApi);
+    final repository = EmployeeRepository(
+      api: stubApi,
+      localStorage: stubStorage,
+    );
     return MultiProvider(
-      providers: [Provider<EmployeeRepository>.value(value: repository)],
+      providers: [
+        Provider<EmployeeRepository>.value(value: repository),
+        ChangeNotifierProvider(
+          create: (_) => EmployeeListState(repository: repository),
+        ),
+      ],
       child: MaterialApp(home: EmployeeFormScreen(employee: employee)),
     );
   }
@@ -121,48 +213,6 @@ void main() {
       await tester.tap(find.text('Create'));
       await tester.pump();
       expect(find.text('Please enter a name'), findsOneWidget);
-    });
-  });
-
-  group('EmployeeFormScreen with API responses', () {
-    // testWidgets('successful create navigates back', (
-    //   WidgetTester tester,
-    // ) async {
-    //   stubApi.setResponse(
-    //     EmployeeResponse(
-    //       status: 'success',
-    //       data: [
-    //         Employee(
-    //           id: 1,
-    //           name: 'John',
-    //           salary: '5000',
-    //           age: '30',
-    //           profileImage: '',
-    //         ),
-    //       ],
-    //       message: 'OK',
-    //     ),
-    //   );
-    //   await tester.pumpWidget(createFormWidget());
-    //   await tester.pump();
-    //   await tester.enterText(find.byType(TextField).at(0), 'John');
-    //   await tester.enterText(find.byType(TextField).at(1), '5000');
-    //   await tester.enterText(find.byType(TextField).at(2), '30');
-    //   await tester.tap(find.text('Create'));
-    //   await tester.pump(const Duration(seconds: 2));
-    //   expect(find.byType(Scaffold), findsNothing);
-    // });
-
-    testWidgets('handles offline by not crashing', (WidgetTester tester) async {
-      stubApi.setException(Exception('Network Error'));
-      await tester.pumpWidget(createFormWidget());
-      await tester.pump();
-      await tester.enterText(find.byType(TextField).at(0), 'John');
-      await tester.enterText(find.byType(TextField).at(1), '5000');
-      await tester.enterText(find.byType(TextField).at(2), '30');
-      await tester.tap(find.text('Create'));
-      await tester.pump(const Duration(seconds: 2));
-      expect(find.text('New Employee'), findsOneWidget);
     });
   });
 }

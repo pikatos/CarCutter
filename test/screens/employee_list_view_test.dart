@@ -74,10 +74,24 @@ class StubEmployeeApi implements EmployeeApiInterface {
 
 class StubLocalStorage extends EmployeeLocalStorage {
   List<Employee> _employees = [];
-  final List<SyncOperation> _operations = [];
+  int _nextLocalId = -1;
 
   void setEmployees(List<Employee> employees) {
     _employees = List.from(employees);
+  }
+
+  @override
+  Future<EmployeeLocalStorageContent> loadContent() async {
+    return EmployeeLocalStorageContent(
+      employees: List.from(_employees),
+      localIdCounter: _nextLocalId,
+    );
+  }
+
+  @override
+  Future<void> saveContent(EmployeeLocalStorageContent content) async {
+    _employees = List.from(content.employees);
+    _nextLocalId = content.localIdCounter;
   }
 
   @override
@@ -105,67 +119,45 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
-  Future<void> updateEmployee(Employee employee) async {
+  Future<Employee> createEmployee({
+    required String name,
+    required String salary,
+    required String age,
+  }) async {
+    final localId = _nextLocalId;
+    _nextLocalId--;
+    final employee = Employee(
+      id: localId,
+      name: name,
+      salary: salary,
+      age: age,
+      profileImage: '',
+    );
+    _employees.add(employee);
+    return employee;
+  }
+
+  @override
+  Future<Employee> updateEmployee(Employee employee) async {
     final index = _employees.indexWhere((e) => e.id == employee.id);
+    final prevEmployee = index != -1 ? _employees[index] : employee;
     if (index != -1) {
       _employees[index] = employee;
+    } else {
+      _employees.add(employee);
     }
+    return prevEmployee;
   }
 
   @override
-  Future<void> deleteEmployee(int id) async {
-    _employees.removeWhere((e) => e.id == id);
-  }
-
-  @override
-  Future<void> updateEmployeeOffline(Employee employee) async {
-    final index = _employees.indexWhere((e) => e.id == employee.id);
+  Future<Employee> deleteEmployee(int id) async {
+    final index = _employees.indexWhere((e) => e.id == id);
     if (index != -1) {
-      _employees[index] = employee;
+      final employee = _employees[index];
+      _employees.removeAt(index);
+      return employee;
     }
-  }
-
-  @override
-  Future<void> deleteEmployeeOffline(int id) async {
-    final employee = await loadEmployee(id);
-    if (employee != null) {
-      _operations.add(SyncOperation.delete(employee: employee));
-    }
-    _employees.removeWhere((e) => e.id == id);
-  }
-
-  @override
-  Future<List<SyncOperation>> loadPendingOperations() async {
-    return List.from(_operations);
-  }
-
-  Future<void> addSyncOperation(SyncOperation operation) async {
-    _operations.add(operation);
-  }
-
-  @override
-  Future<List<Employee>> mergeWithPendingOperations(
-    List<Employee> serverEmployees,
-  ) async {
-    final result = List<Employee>.from(serverEmployees);
-    for (final operation in _operations) {
-      switch (operation.type) {
-        case SyncOperationType.create:
-          result.add(operation.employee);
-          break;
-        case SyncOperationType.update:
-          final index = result.indexWhere((e) => e.id == operation.employee.id);
-          if (index != -1) {
-            result[index] = operation.employee;
-          }
-          break;
-        case SyncOperationType.delete:
-          result.removeWhere((e) => e.id == operation.employee.id);
-          break;
-      }
-    }
-    _employees = List.from(result);
-    return result;
+    throw Exception('Employee not found: $id');
   }
 }
 

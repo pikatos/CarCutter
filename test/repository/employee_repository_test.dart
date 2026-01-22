@@ -76,7 +76,6 @@ class StubEmployeeApi implements EmployeeApiInterface {
 
 class StubLocalStorage extends EmployeeLocalStorage {
   List<Employee> _employees = [];
-  final List<SyncOperation> _operations = [];
   int _nextLocalId = -1;
 
   void setEmployees(List<Employee> employees) {
@@ -89,7 +88,6 @@ class StubLocalStorage extends EmployeeLocalStorage {
   Future<EmployeeLocalStorageContent> loadContent() async {
     return EmployeeLocalStorageContent(
       employees: List.from(_employees),
-      pendingOperations: List.from(_operations),
       localIdCounter: _nextLocalId,
     );
   }
@@ -97,8 +95,6 @@ class StubLocalStorage extends EmployeeLocalStorage {
   @override
   Future<void> saveContent(EmployeeLocalStorageContent content) async {
     _employees = List.from(content.employees);
-    _operations.clear();
-    _operations.addAll(content.pendingOperations);
     _nextLocalId = content.localIdCounter;
   }
 
@@ -113,11 +109,6 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
-  Future<void> addEmployee(Employee employee) async {
-    _employees.add(employee);
-  }
-
-  @override
   Future<Employee?> loadEmployee(int id) async {
     try {
       return _employees.firstWhere((e) => e.id == id);
@@ -127,7 +118,7 @@ class StubLocalStorage extends EmployeeLocalStorage {
   }
 
   @override
-  Future<Employee> addEmployeeOffline({
+  Future<Employee> createEmployee({
     required String name,
     required String salary,
     required String age,
@@ -141,60 +132,31 @@ class StubLocalStorage extends EmployeeLocalStorage {
       age: age,
       profileImage: '',
     );
-    _operations.add(SyncOperation.create(employee: employee));
     _employees.add(employee);
     return employee;
   }
 
   @override
-  Future<void> updateEmployee(Employee employee) async {
+  Future<Employee> updateEmployee(Employee employee) async {
     final index = _employees.indexWhere((e) => e.id == employee.id);
+    final prevEmployee = index != -1 ? _employees[index] : employee;
     if (index != -1) {
       _employees[index] = employee;
     } else {
       _employees.add(employee);
     }
+    return prevEmployee;
   }
 
   @override
-  Future<void> updateEmployeeOffline(Employee employee) async {
-    _operations.add(SyncOperation.update(employee: employee));
-    final index = _employees.indexWhere((e) => e.id == employee.id);
+  Future<Employee> deleteEmployee(int id) async {
+    final index = _employees.indexWhere((e) => e.id == id);
     if (index != -1) {
-      _employees[index] = employee;
-    } else {
-      _employees.add(employee);
+      final employee = _employees[index];
+      _employees.removeAt(index);
+      return employee;
     }
-  }
-
-  @override
-  Future<void> deleteEmployee(int id) async {
-    _employees.removeWhere((e) => e.id == id);
-  }
-
-  @override
-  Future<void> deleteEmployeeOffline(int id) async {
-    try {
-      final employee = _employees.firstWhere((e) => e.id == id);
-      _employees.removeWhere((e) => e.id == id);
-      _operations.add(SyncOperation.delete(employee: employee));
-    } catch (_) {}
-  }
-
-  @override
-  Future<List<SyncOperation>> loadPendingOperations() async {
-    return List.from(_operations);
-  }
-
-  @override
-  Future<void> addSyncOperation(SyncOperation operation) async {
-    _operations.add(operation);
-  }
-
-  @override
-  Future<void> savePendingOperations(List<SyncOperation> operations) async {
-    _operations.clear();
-    _operations.addAll(operations);
+    throw Exception('Employee not found: $id');
   }
 }
 
@@ -213,8 +175,8 @@ void main() {
     repository = EmployeeRepository(api: stubApi, localStorage: stubStorage);
   });
 
-  group('EmployeeRepository.getAllEmployees', () {
-    test('returns employees from API', () async {
+  group('EmployeeRepository.fetchEmployees', () {
+    test('yields local then server employees', () async {
       final mockResponse = EmployeeResponse(
         status: 'success',
         data: [
@@ -230,26 +192,29 @@ void main() {
       );
       fakeApi.setResponse(mockResponse);
 
-      final result = await repository.fetchEmployees();
+      final results = await repository.fetchEmployees().toList();
 
-      expect(result, hasLength(1));
-      expect(result[0].name, 'John');
+      expect(results, hasLength(2));
+      expect(results[0], isA<List<Employee>>());
+      expect(results[1], isA<List<Employee>>());
       expect(fakeApi.lastMethod, 'getAllEmployees');
     });
 
-    test('returns empty list when API returns empty', () async {
+    test('yields empty list when API returns empty', () async {
       fakeApi.setResponse(
         EmployeeResponse(status: 'success', data: [], message: 'OK'),
       );
 
-      final result = await repository.fetchEmployees();
+      final results = await repository.fetchEmployees().toList();
 
-      expect(result, isEmpty);
+      expect(results, hasLength(2));
+      expect(results[0], isEmpty);
+      expect(results[1], isEmpty);
     });
   });
 
-  group('EmployeeRepository.getEmployee', () {
-    test('returns single employee', () async {
+  group('EmployeeRepository.fetchEmployee', () {
+    test('yields local then server employee', () async {
       final mockResponse = EmployeeResponse(
         status: 'success',
         data: [
@@ -265,16 +230,17 @@ void main() {
       );
       fakeApi.setResponse(mockResponse);
 
-      final result = await repository.fetchEmployee(1);
+      final results = await repository.fetchEmployee(1).toList();
 
-      expect(result.id, 1);
-      expect(result.name, 'John');
+      expect(results, hasLength(2));
+      expect(results[0], isA<Employee?>());
+      expect(results[1], isA<Employee?>());
       expect(fakeApi.lastArgs!['id'], 1);
     });
   });
 
   group('EmployeeRepository.createEmployee', () {
-    test('returns created employee with local ID', () async {
+    test('creates employee locally and returns server result', () async {
       final createdEmployee = Employee(
         id: 10,
         name: 'New Employee',
@@ -297,18 +263,15 @@ void main() {
       );
 
       expect(result.name, 'New Employee');
-      expect(result.id, isNegative);
+      expect(result.id, 10);
       expect(fakeApi.lastArgs!['name'], 'New Employee');
-
-      final operations = await stubStorage.loadPendingOperations();
-      expect(operations, isEmpty);
       expect(stubStorage.savedEmployees, hasLength(1));
       expect(stubStorage.savedEmployees[0].id, 10);
     });
   });
 
   group('EmployeeRepository.updateEmployee', () {
-    test('returns updated employee', () async {
+    test('updates employee locally and returns server result', () async {
       final employee = Employee(
         id: 1,
         name: 'Updated',
@@ -322,22 +285,20 @@ void main() {
         message: 'OK',
       );
       fakeApi.setResponse(mockResponse);
+      stubStorage.setEmployees([employee]);
 
       final result = await repository.updateEmployee(employee);
 
       expect(result.name, 'Updated');
       expect(result.id, 1);
       expect(fakeApi.lastMethod, 'updateEmployee');
-
-      final operations = await stubStorage.loadPendingOperations();
-      expect(operations, isEmpty);
       expect(stubStorage.savedEmployees, hasLength(1));
       expect(stubStorage.savedEmployees[0].name, 'Updated');
     });
   });
 
   group('EmployeeRepository.deleteEmployee', () {
-    test('queues operation and syncs', () async {
+    test('deletes employee locally and completes', () async {
       stubStorage.setEmployees([
         Employee(
           id: 1,
@@ -353,9 +314,8 @@ void main() {
 
       await repository.deleteEmployee(1);
 
-      // After sync, operations are cleared (because they succeeded)
-      // So we verify the API was called instead
       expect(fakeApi.lastMethod, 'deleteEmployee');
+      expect(stubStorage.savedEmployees, isEmpty);
     });
   });
 }
