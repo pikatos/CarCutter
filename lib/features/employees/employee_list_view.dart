@@ -143,6 +143,7 @@ class EmployeeListView extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () => state.refresh(),
       child: ListView.builder(
+        padding: const EdgeInsets.only(bottom: 88),
         itemCount: state.employees.length,
         itemBuilder: (context, index) {
           final employee = state.employees[index];
