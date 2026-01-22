@@ -11,6 +11,7 @@ class EmployeeListState with ChangeNotifier {
   bool _isLoading = false;
   bool _isSyncing = false;
   String? _error;
+  String? _message;
 
   EmployeeListState({required EmployeeRepository repository})
     : _repository = repository {
@@ -22,14 +23,18 @@ class EmployeeListState with ChangeNotifier {
               _employees.add(employee);
               _employees.sort(Employee.byName);
             }
+            _message = 'Employee ${employee.name} created';
           case EmployeeChangeUpdated(:final employee):
             final index = _employees.indexWhere((e) => e.id == employee.id);
             if (index != -1) {
               _employees[index] = employee;
             }
+            _message = 'Employee ${employee.name} updated';
           case EmployeeChangeDeleted(:final employee):
             _employees.removeWhere((e) => e.id == employee.id);
+            _message = 'Employee ${employee.name} deleted';
         }
+        _error = null;
         notifyListeners();
       },
       onError: (e) {
@@ -50,6 +55,11 @@ class EmployeeListState with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isSyncing => _isSyncing;
   String? get error => _error;
+  String? get message => _message;
+
+  void clearMessage() {
+    _message = null;
+  }
 
   Future<void> loadEmployees() async {
     _isLoading = true;
@@ -88,10 +98,11 @@ class EmployeeListState with ChangeNotifier {
     }
   }
 
-  Future<void> deleteEmployee(int id) async {
+  void deleteEmployee(int id) {
     final index = _employees.indexWhere((e) => e.id == id);
     if (index != -1) {
       _employees.removeAt(index);
+      _error = null;
       notifyListeners();
     }
     () async {

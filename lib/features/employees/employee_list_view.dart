@@ -40,41 +40,27 @@ extension EmployeeNavigation on BuildContext {
     );
   }
 
-  void showDeleteEmployeeDialog(Employee employee) {
+  void showDeleteEmployeeDialog(BuildContext context, Employee employee) {
     showDialog(
-      context: this,
-      builder: (context) => AlertDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Employee'),
         content: Text('Are you sure you want to delete ${employee.name}?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              _deleteEmployee(this, employee.id);
+              Navigator.pop(dialogContext);
+              context.read<EmployeeListState>().deleteEmployee(employee.id);
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
-  }
-
-  Future<void> _deleteEmployee(BuildContext context, int id) async {
-    final state = context.read<EmployeeListState>();
-    try {
-      await state.deleteEmployee(id);
-      if (context.mounted) {
-        context.showSnackBar('Employee deleted');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        context.showSnackBar('Delete failed: $e');
-      }
-    }
   }
 }
 
@@ -94,7 +80,10 @@ class EmployeeListView extends StatelessWidget {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (state.error != null) {
               context.showSnackBar('Error: ${state.error}');
+            } else if (state.message != null) {
+              context.showSnackBar(state.message!);
             }
+            state.clearMessage();
           });
 
           return Scaffold(
@@ -160,7 +149,7 @@ class EmployeeListView extends StatelessWidget {
           return EmployeeListRow(
             employee: employee,
             onTap: () => context.navigateToEmployeeDetails(employee),
-            onDelete: () => context.showDeleteEmployeeDialog(employee),
+            onDelete: () => context.showDeleteEmployeeDialog(context, employee),
           );
         },
       ),
