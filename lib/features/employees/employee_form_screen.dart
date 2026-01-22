@@ -53,25 +53,21 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
           age: _ageController.text,
           profileImage: widget.employee!.profileImage,
         );
-        () async {
-          try {
-            await repository.updateEmployee(updatedEmployee);
-          } catch (_) {}
-        }();
+        repository.updateEmployee(updatedEmployee).ignore();
+        if (mounted) {
+          Navigator.pop(context, updatedEmployee);
+        }
       } else {
-        () async {
-          try {
-            await repository.createEmployee(
+        repository
+            .createEmployee(
               name: _nameController.text,
               salary: _salaryController.text,
               age: _ageController.text,
-            );
-          } catch (_) {}
-        }();
-      }
-
-      if (mounted) {
-        Navigator.pop(context);
+            )
+            .ignore();
+        if (mounted) {
+          Navigator.pop(context);
+        }
       }
     }
   }

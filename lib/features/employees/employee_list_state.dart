@@ -15,7 +15,7 @@ class EmployeeListState with ChangeNotifier {
 
   EmployeeListState({required EmployeeRepository repository})
     : _repository = repository {
-    _changesSubscription = _repository.changes.asBroadcastStream().listen(
+    _changesSubscription = _repository.changes.listen(
       (change) {
         switch (change) {
           case EmployeeChangeCreated(:final employee):
@@ -105,10 +105,6 @@ class EmployeeListState with ChangeNotifier {
       _error = null;
       notifyListeners();
     }
-    () async {
-      try {
-        await _repository.deleteEmployee(id);
-      } catch (_) {}
-    }();
+    _repository.deleteEmployee(id).ignore();
   }
 }

@@ -1,6 +1,9 @@
+import 'dart:async';
+import 'package:carcutter/features/employees/employee_list_view.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'employee_repository.dart';
 import 'employee_model.dart';
-import 'employee_form_screen.dart';
 
 class EmployeeDetailsScreen extends StatefulWidget {
   final Employee employee;
@@ -13,97 +16,97 @@ class EmployeeDetailsScreen extends StatefulWidget {
 
 class _EmployeeDetailsScreenState extends State<EmployeeDetailsScreen> {
   late Employee _employee;
-  bool _hasUpdated = false;
+  StreamSubscription<EmployeeChange>? _changesSubscription;
+
+  void _subscribeToChanges() {
+    final repository = context.read<EmployeeRepository>();
+    _changesSubscription = repository.changes.listen(
+      (change) {
+        if (change is EmployeeChangeUpdated &&
+            change.employee.id == _employee.id) {
+          if (mounted) {
+            setState(() => _employee = change.employee);
+          }
+        }
+      },
+      onError: (e) {
+        // Handle error silently or show UI feedback
+      },
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     _employee = widget.employee;
+    _subscribeToChanges();
   }
 
-  void _navigateToEdit() async {
-    final result = await Navigator.push<Employee>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EmployeeFormScreen(employee: _employee),
-      ),
-    );
-    if (result is Employee && mounted) {
-      setState(() {
-        _employee = result;
-        _hasUpdated = true;
-      });
-    }
+  @override
+  void dispose() {
+    _changesSubscription?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: !_hasUpdated,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        if (_hasUpdated && result == null) {
-          Navigator.pop(context, _employee);
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Employee Details')),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _navigateToEdit,
-          child: const Icon(Icons.edit),
-        ),
-        body: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.deepPurple,
-                        child: Text(
-                          _employee.name[0],
-                          style: const TextStyle(
-                            fontSize: 40,
-                            color: Colors.white,
-                          ),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Employee Details')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.navigateToEditEmployee(_employee),
+        child: const Icon(Icons.edit),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.deepPurple,
+                      child: Text(
+                        _employee.name[0],
+                        style: const TextStyle(
+                          fontSize: 40,
+                          color: Colors.white,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    _buildDetailTile(
-                      icon: Icons.badge,
-                      label: 'Name',
-                      value: _employee.name,
+                  ),
+                  const SizedBox(height: 24),
+                  _buildDetailTile(
+                    icon: Icons.badge,
+                    label: 'Name',
+                    value: _employee.name,
+                  ),
+                  _buildDetailTile(
+                    icon: Icons.attach_money,
+                    label: 'Salary',
+                    value: '\$${_employee.salary}',
+                  ),
+                  _buildDetailTile(
+                    icon: Icons.cake,
+                    label: 'Age',
+                    value: '${_employee.age} years',
+                  ),
+                  if (_employee.profileImage.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Profile Image',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
-                    _buildDetailTile(
-                      icon: Icons.attach_money,
-                      label: 'Salary',
-                      value: '\$${_employee.salary}',
-                    ),
-                    _buildDetailTile(
-                      icon: Icons.cake,
-                      label: 'Age',
-                      value: '${_employee.age} years',
-                    ),
-                    if (_employee.profileImage.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Profile Image',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 8),
-                      Image.network(_employee.profileImage),
-                    ],
+                    const SizedBox(height: 8),
+                    Image.network(_employee.profileImage),
                   ],
-                ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
