@@ -64,15 +64,28 @@ extension EmployeeNavigation on BuildContext {
   }
 }
 
-class EmployeeListView extends StatelessWidget {
+class EmployeeListView extends StatefulWidget {
   final EmployeeRepository repository;
 
   const EmployeeListView({super.key, required this.repository});
 
   @override
+  State<EmployeeListView> createState() => _EmployeeListViewState();
+}
+
+class _EmployeeListViewState extends State<EmployeeListView> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => EmployeeListState(repository: repository),
+      create: (_) => EmployeeListState(repository: widget.repository),
       child: Builder(
         builder: (context) {
           final state = context.watch<EmployeeListState>();
@@ -82,6 +95,14 @@ class EmployeeListView extends StatelessWidget {
               context.showSnackBar('Error: ${state.error}');
             } else if (state.message != null) {
               context.showSnackBar(state.message!);
+            }
+            if (state.scrollToIndex != null) {
+              _scrollController.jumpTo(
+                _scrollController.position.maxScrollExtent /
+                    state.employees.length *
+                    state.scrollToIndex!,
+              );
+              state.clearScrollTarget();
             }
             state.clearMessage();
           });
@@ -143,6 +164,7 @@ class EmployeeListView extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () => state.refresh(),
       child: ListView.builder(
+        controller: _scrollController,
         padding: const EdgeInsets.only(bottom: 88),
         itemCount: state.employees.length,
         itemBuilder: (context, index) {

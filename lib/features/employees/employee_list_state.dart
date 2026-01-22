@@ -12,6 +12,7 @@ class EmployeeListState with ChangeNotifier {
   bool _isSyncing = false;
   String? _error;
   String? _message;
+  int? _scrollToIndex;
 
   EmployeeListState({required EmployeeRepository repository})
     : _repository = repository {
@@ -22,12 +23,16 @@ class EmployeeListState with ChangeNotifier {
             if (!_employees.any((e) => e.id == employee.id)) {
               _employees.add(employee);
               _employees.sort(Employee.byName);
+              _scrollToIndex = _employees.indexWhere(
+                (e) => e.id == employee.id,
+              );
             }
             _message = 'Employee ${employee.name} created';
           case EmployeeChangeUpdated(:final employee):
             final index = _employees.indexWhere((e) => e.id == employee.id);
             if (index != -1) {
               _employees[index] = employee;
+              _scrollToIndex = index;
             }
             _message = 'Employee ${employee.name} updated';
           case EmployeeChangeDeleted(:final employee):
@@ -56,6 +61,11 @@ class EmployeeListState with ChangeNotifier {
   bool get isSyncing => _isSyncing;
   String? get error => _error;
   String? get message => _message;
+  int? get scrollToIndex => _scrollToIndex;
+
+  void clearScrollTarget() {
+    _scrollToIndex = null;
+  }
 
   void clearMessage() {
     _message = null;
