@@ -6,6 +6,14 @@ import 'employee_details_screen.dart';
 import 'employee_form_screen.dart';
 import 'employee_list_state.dart';
 
+extension ScaffoldHelper on BuildContext {
+  void showSnackBar(String message) {
+    ScaffoldMessenger.of(this)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
 extension EmployeeNavigation on BuildContext {
   void navigateToEmployeeDetails(Employee employee) async {
     await Navigator.push<Employee>(
@@ -60,15 +68,11 @@ extension EmployeeNavigation on BuildContext {
     try {
       await state.deleteEmployee(id);
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Employee deleted')));
+        context.showSnackBar('Employee deleted');
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
+        context.showSnackBar('Delete failed: $e');
       }
     }
   }
@@ -89,9 +93,7 @@ class EmployeeListView extends StatelessWidget {
 
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (state.error != null) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text('Error: ${state.error}')));
+              context.showSnackBar('Error: ${state.error}');
             }
           });
 
