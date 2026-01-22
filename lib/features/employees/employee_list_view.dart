@@ -39,29 +39,6 @@ extension EmployeeNavigation on BuildContext {
       ),
     );
   }
-
-  void showDeleteEmployeeDialog(BuildContext context, Employee employee) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Employee'),
-        content: Text('Are you sure you want to delete ${employee.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              context.read<EmployeeListState>().deleteEmployee(employee.id);
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class EmployeeListView extends StatefulWidget {
@@ -169,40 +146,51 @@ class _EmployeeListViewState extends State<EmployeeListView> {
         itemCount: state.employees.length,
         itemBuilder: (context, index) {
           final employee = state.employees[index];
-          return EmployeeListRow(
-            employee: employee,
-            onTap: () => context.navigateToEmployeeDetails(employee),
-            onDelete: () => context.showDeleteEmployeeDialog(context, employee),
+          return Dismissible(
+            key: ValueKey(employee.id),
+            direction: DismissDirection.startToEnd,
+            background: Container(
+              color: Colors.red,
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.only(left: 16),
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            confirmDismiss: (direction) async {
+              final confirmed = await _showDeleteDialog(context, employee);
+              return confirmed;
+            },
+            onDismissed: (direction) {
+              state.deleteEmployee(employee.id);
+            },
+            child: ListTile(
+              leading: CircleAvatar(child: Text(employee.name[0])),
+              title: Text(employee.name),
+              subtitle: Text('Age: ${employee.age}'),
+              onTap: () => context.navigateToEmployeeDetails(employee),
+            ),
           );
         },
       ),
     );
   }
-}
 
-class EmployeeListRow extends StatelessWidget {
-  final Employee employee;
-  final VoidCallback onTap;
-  final VoidCallback onDelete;
-
-  const EmployeeListRow({
-    super.key,
-    required this.employee,
-    required this.onTap,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: CircleAvatar(child: Text(employee.name[0])),
-      title: Text(employee.name),
-      subtitle: Text('Age: ${employee.age}'),
-      trailing: IconButton(
-        icon: const Icon(Icons.delete, color: Colors.red),
-        onPressed: onDelete,
+  Future<bool> _showDeleteDialog(BuildContext context, Employee employee) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Employee'),
+        content: Text('Are you sure you want to delete ${employee.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
-      onTap: onTap,
-    );
+    ).then((value) => value ?? false);
   }
 }
