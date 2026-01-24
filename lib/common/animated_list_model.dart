@@ -18,10 +18,6 @@ class ListModel<E> {
 
   int get length => _items.length;
 
-  E operator [](int index) => _items[index];
-
-  int indexOf(E item) => _items.indexOf(item);
-
   void insert(int index, E item) {
     _items.insert(index, item);
     listKey.currentState?.insertItem(
@@ -37,14 +33,6 @@ class ListModel<E> {
       (context, animation) => removeItemBuilder(context, animation),
       duration: const Duration(milliseconds: 250),
     );
-  }
-
-  void removeWhere(bool Function(E element) test) {
-    for (var i = _items.length - 1; i >= 0; i--) {
-      if (test(_items[i])) {
-        removeAt(i);
-      }
-    }
   }
 
   void updateItem(int index, E newItem) {

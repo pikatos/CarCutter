@@ -11,7 +11,7 @@ class EmployeeListState with ChangeNotifier {
 
   List<Employee> _employees = [];
   bool _isLoading = false;
-  bool _isSyncing = false;
+
   String? _error;
   String? _message;
 
@@ -101,7 +101,7 @@ class EmployeeListState with ChangeNotifier {
 
   List<Employee> get employees => _employees;
   bool get isLoading => _isLoading;
-  bool get isSyncing => _isSyncing;
+
   String? get error => _error;
   String? get message => _message;
 
@@ -118,7 +118,7 @@ class EmployeeListState with ChangeNotifier {
       await _repository.fetchEmployees().forEach((employees) {
         _employees = employees;
         _listModel.replaceAll(employees);
-        _isSyncing = false;
+
         notifyListeners();
       });
     } catch (e) {

@@ -10,14 +10,6 @@ class Lock {
     _token = Completer();
   }
 
-  Future<bool> tryLock() async {
-    if (_token != null) {
-      return false;
-    }
-    _token = Completer();
-    return true;
-  }
-
   void release() {
     final prevToken = _token;
     _token = null;
